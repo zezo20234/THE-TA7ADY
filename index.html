@@ -22,7 +22,7 @@
             color: blue; /* ALL TEXT COLOR SET TO BLUE */
         }
         /* Specific elements and containers that hold text */
-        .login-box, form, #selfEditArea, #selfEditor, #accessCodeContainer, #creditCodeBox, footer, #shopContainer, #welcomeBox {
+        .login-box, form, #selfEditArea, #selfEditor, #accessCodeContainer, #creditCodeBox, footer, #shopContainer, #welcomeBox, #radarContainer {
             max-width: 400px;
             margin: 20px auto;
             padding: 25px;
@@ -198,6 +198,17 @@
         #startScannerButton, #stopScannerButton {
             margin-top: 10px;
         }
+
+        /* Radar specific styles */
+        #radarContainer {
+            display: none;
+            text-align: center;
+        }
+        #radarCanvas {
+            border: 2px solid green;
+            background-color: black;
+            border-radius: 50%;
+        }
     </style>
 </head>
 <body>
@@ -249,6 +260,7 @@
     </div>
     <button class="btnshop" onclick="openShop()" style="display:none;">🛒 Open Shop</button>
     <button onclick="openRules()" style="display:none; margin: 10px auto; display: block; max-width: 400px; padding: 12px; border-radius: 30px; background: rgba(255,255,255,0.1); color: blue; border: 1px solid rgba(255,255,255,0.3);" id="rulesButton">Rules</button>
+    <button onclick="openMoreOptions()" style="display:none; margin: 10px auto; display: block; max-width: 400px; padding: 12px; border-radius: 30px; background: rgba(255,255,255,0.1); color: blue; border: 1px solid rgba(255,255,255,0.3);" id="openMoreButton">More Options</button>
 
 
     <div id="shopContainer" style="display:none; border: 1px solid #ccc; padding: 10px; margin-top: 10px;">
@@ -336,8 +348,16 @@
     </div>
    <button id="openRadarButton">📡 Open Radar</button>
 
+    <div id="radarContainer" class="login-box" style="display:none;">
+        <h3>Radar</h3>
+        <canvas id="radarCanvas" width="300" height="300"></canvas>
+        <p id="lookingAt" style="color:white; font-weight:bold;"></p>
+        <audio id="beepSound" src="beep.mp3" preload="auto"></audio> </div>
+
     <script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+
 
     <script type="module">
         // Import modular Firebase SDK functions
@@ -564,6 +584,8 @@
             document.querySelector('.btnshop').style.display = "none"; // Hide shop open button
             document.getElementById("rulesButton").style.display = "none"; // Hide rules button
             document.getElementById("openMoreButton").style.display = "none"; // Hide open more button
+            document.getElementById("radarContainer").style.display = "none"; // Hide radar on logout
+
 
             document.getElementById("quickAccessCodeInput").value = "";
             document.getElementById("quickUserList").style.display = "none";
@@ -887,7 +909,8 @@ document.getElementById('openRadarButton').addEventListener('click', () => {
 });
 
 function startRadar(username) {
-    let angle = 0;
+  let angle = 0; // Initialize angle here
+  let myCoords = null; // Initialize myCoords here
   const sweepSpeed = 0.05;
   const socket = io();
 
@@ -896,7 +919,7 @@ function startRadar(username) {
 
   // Send live speed & altitude
   navigator.geolocation.watchPosition(pos => {
-    myCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+    myCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
     const speed = pos.coords.speed !== null ? Math.round(pos.coords.speed * 3.6) : 0; // km/h
     const altitude = pos.coords.altitude !== null ? Math.round(pos.coords.altitude) : 0;
     const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
@@ -917,12 +940,8 @@ function startRadar(username) {
   });
 
   function drawRadar() {
-    function drawRadar() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  let lookingAtText = '';
-  // rest of drawing...
-}
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    let lookingAtText = '';
 
     // Draw radar circles
     ctx.strokeStyle = 'green';
@@ -938,32 +957,28 @@ function startRadar(username) {
     ctx.lineTo(center + radius*Math.cos(angle), center + radius*Math.sin(angle));
     ctx.stroke();
 
-    let lookingAtText = '';
-
     for (let user in allUsers) {
       const data = allUsers[user];
       const isMe = (user === username);
       const color = isMe ? 'cyan' : 'green';
 
-      // TEMP: random dot placement (replace later with real coords math)
-// fixed: put your dot in center; others spread evenly
-let index = Object.keys(allUsers).indexOf(user);
-if (isMe) {
-  dotX = center;
-  dotY = center;
-} else if (myCoords && data.coords) {
-  const angleToUser = computeBearing(myCoords.lat, myCoords.lng, data.coords.lat, data.coords.lng);
-  dotX = center + Math.cos(angleToUser) * radius*0.7;
-  dotY = center + Math.sin(angleToUser) * radius*0.7;
-} else {
-  // fallback: fixed angle
-  let index = Object.keys(allUsers).indexOf(user);
-  const fallbackAngle = (index / Object.keys(allUsers).length) * 2 * Math.PI;
-  dotX = center + Math.cos(fallbackAngle) * radius*0.7;
-  dotY = center + Math.sin(fallbackAngle) * radius*0.7;
-}
+      let dotX, dotY;
 
-}
+      if (isMe) {
+        dotX = center;
+        dotY = center;
+      } else if (myCoords && data.coords) {
+        const angleToUser = computeBearing(myCoords.lat, myCoords.lng, data.coords.lat, data.coords.lng);
+        dotX = center + Math.cos(angleToUser) * radius*0.7;
+        dotY = center + Math.sin(angleToUser) * radius*0.7;
+      } else {
+        // fallback: fixed angle
+        let index = Object.keys(allUsers).indexOf(user);
+        const fallbackAngle = (index / Object.keys(allUsers).length) * 2 * Math.PI;
+        dotX = center + Math.cos(fallbackAngle) * radius*0.7;
+        dotY = center + Math.sin(fallbackAngle) * radius*0.7;
+      }
+
       // Detect if sweep points at dot
       let dotAngle = Math.atan2(dotY - center, dotX - center);
       if (dotAngle < 0) dotAngle += 2*Math.PI;
@@ -1007,7 +1022,7 @@ function computeBearing(lat1, lon1, lat2, lon2) {
   const x = Math.cos(toRad(lat1)) * Math.sin(toRad(lat2)) -
             Math.sin(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.cos(dLon);
   const brng = Math.atan2(y, x);
-  return (brng + 2 * Math.PI) % (2 * Math.PI); // always 0..2π
+  return (brng + 2 * Math.PI) % (2 * Math.PI); // always 0..2π
 }
 </script>
 
