@@ -339,9 +339,8 @@
 <div id="radarContainer" style="display:none; margin-top:20px;">
   <canvas id="radarCanvas" width="500" height="500" style="background:black; display:block; margin:auto;"></canvas>
   <audio id="beepSound" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg" preload="auto"></audio>
-  <div id="lookingAt" style="margin-top:10px; color: white;"></div>
+  <div id="lookingAt" style="margin-top:10px; color:white;"></div>
 </div>
-
     <script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
@@ -1104,6 +1103,109 @@ function startRadar(username) {
   function animate() {
     angle += sweepSpeed;
     if (angle>=2*Math.PI) { angle=0; document.getElementById('beepSound').play(); }
+    drawRadar();
+    requestAnimationFrame(animate);
+  }
+  animate();
+}
+</script>
+<script>
+function checkQuickAccessCode() {
+  alert('Quick access not implemented yet!');
+}
+</script>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+document.getElementById('openRadarButton').addEventListener('click', () => {
+  const username = document.getElementById('userWelcome').innerText.trim();
+  if (!username) { alert("Please log in first!"); return; }
+  document.getElementById('radarContainer').style.display = 'block';
+  startRadar(username);
+});
+
+function computeBearing(lat1, lon1, lat2, lon2) {
+  const toRad = deg => deg * Math.PI/180;
+  const dLon = toRad(lon2 - lon1);
+  const y = Math.sin(dLon) * Math.cos(toRad(lat2));
+  const x = Math.cos(toRad(lat1))*Math.sin(toRad(lat2)) -
+            Math.sin(toRad(lat1))*Math.cos(toRad(lat2))*Math.cos(dLon);
+  return (Math.atan2(y, x) + 2*Math.PI) % (2*Math.PI);  // in radians
+}
+
+function startRadar(username) {
+  const socket = io();
+  let myCoords = null;
+  let angle = 0;                // ✅ fixes "angle is not defined"
+  const sweepSpeed = 0.05;
+  let allUsers = {};
+
+  socket.emit('join', { username });
+
+  navigator.geolocation.watchPosition(pos => {
+    myCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+    const speed = pos.coords.speed !== null ? Math.round(pos.coords.speed*3.6) : 0;
+    const alt = pos.coords.altitude !== null ? Math.round(pos.coords.altitude) : 0;
+    socket.emit('locationUpdate', { username, speed, altitude: alt, coords: myCoords });
+  }, err=>console.error(err), {enableHighAccuracy:true});
+
+  const canvas = document.getElementById('radarCanvas');
+  const ctx = canvas.getContext('2d');
+  const center = canvas.width/2;
+  const radius = center - 10;
+
+  socket.on('updateUsers', users => { allUsers = users; });
+
+  function drawRadar() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    let lookingAtText = '';
+
+    // circles
+    ctx.strokeStyle='green';
+    for(let i=1;i<=4;i++){
+      ctx.beginPath();
+      ctx.arc(center,center,radius*i/4,0,2*Math.PI);
+      ctx.stroke();
+    }
+
+    // sweep
+    ctx.beginPath();
+    ctx.moveTo(center,center);
+    ctx.lineTo(center+radius*Math.cos(angle), center+radius*Math.sin(angle));
+    ctx.stroke();
+
+    for(let user in allUsers){
+      const data=allUsers[user];
+      const isMe=(user===username);
+      let dotX,dotY;
+
+      if(isMe){
+        dotX=center; dotY=center;
+      } else if(myCoords && data.coords){
+        const a = computeBearing(myCoords.lat, myCoords.lng, data.coords.lat, data.coords.lng);
+        dotX = center+Math.cos(a)*radius*0.7;
+        dotY = center+Math.sin(a)*radius*0.7;
+
+        let diff = Math.abs(angle - a);
+        if(diff>Math.PI) diff=2*Math.PI - diff;
+        if(diff<0.1) lookingAtText='Looking at: '+user;
+      }
+
+      ctx.fillStyle=isMe?'cyan':'green';
+      ctx.beginPath(); ctx.arc(dotX,dotY,6,0,2*Math.PI); ctx.fill();
+
+      ctx.fillStyle='white';
+      ctx.font='12px sans-serif';
+      ctx.fillText(user,dotX+8,dotY-10);
+      ctx.fillText(data.speed+' km/h',dotX+8,dotY+2);
+      ctx.fillText(data.altitude+' m',dotX+8,dotY+14);
+    }
+
+    document.getElementById('lookingAt').innerText=lookingAtText;
+  }
+
+  function animate(){
+    angle+=sweepSpeed;
+    if(angle>=2*Math.PI){ angle=0; document.getElementById('beepSound').play(); }
     drawRadar();
     requestAnimationFrame(animate);
   }
