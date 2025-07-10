@@ -944,9 +944,16 @@ function startRadar(username) {
       const color = isMe ? 'cyan' : 'green';
 
       // TEMP: random dot placement (replace later with real coords math)
-      let dotX = center + Math.cos(Math.random()*2*Math.PI) * radius*0.7;
-      let dotY = center + Math.sin(Math.random()*2*Math.PI) * radius*0.7;
-
+// fixed: put your dot in center; others spread evenly
+let index = Object.keys(allUsers).indexOf(user);
+if (isMe) {
+  dotX = center;
+  dotY = center;
+} else {
+  const angleToUser = (index / Object.keys(allUsers).length) * 2 * Math.PI;
+  dotX = center + Math.cos(angleToUser) * radius*0.7;
+  dotY = center + Math.sin(angleToUser) * radius*0.7;
+}
       // Detect if sweep points at dot
       let dotAngle = Math.atan2(dotY - center, dotX - center);
       if (dotAngle < 0) dotAngle += 2*Math.PI;
