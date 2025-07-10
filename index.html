@@ -245,7 +245,7 @@
     </div>
 
     <div id="welcomeBox" style="display:none; text-align:center; margin-top:20px;">
-        <h1><span id="welcomeMessage"></span><span id="userWelcome"></span>!</h1>
+        <h1><span id="welcomeMessage"></span><span id="userWelcome">zezo</span>!</h1>
     </div>
     <button class="btnshop" onclick="openShop()" style="display:none;">🛒 Open Shop</button>
     <button onclick="openRules()" style="display:none; margin: 10px auto; display: block; max-width: 400px; padding: 12px; border-radius: 30px; background: rgba(255,255,255,0.1); color: blue; border: 1px solid rgba(255,255,255,0.3);" id="rulesButton">Rules</button>
@@ -1009,6 +1009,15 @@ function computeBearing(lat1, lon1, lat2, lon2) {
   const brng = Math.atan2(y, x);
   return (brng + 2 * Math.PI) % (2 * Math.PI); // always 0..2π
 }
+<script>
+function checkQuickAccessCode() {
+  alert('Quick access not implemented yet!');
+}
+</script>
+</script>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  // 🧠 (copy the full radar script code here from my previous message)
 </script>
 
 </body>
