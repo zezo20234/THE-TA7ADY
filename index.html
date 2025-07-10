@@ -871,14 +871,7 @@
 
     </script>
 
-<button id="openRadarButton">📡 Open Radar</button>
 
-<div id="radarContainer" style="display:none; margin-top:20px;">
-  <canvas id="radarCanvas" width="500" height="500" style="background:black; display:block; margin:auto;"></canvas>
-  <audio id="beepSound" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg" preload="auto"></audio>
-  <div id="lookingAt" style="margin-top:10px; color: white;"></div>
-</div>
-   <script src="/socket.io/socket.io.js"></script>
 <script>
 document.getElementById('openRadarButton').addEventListener('click', () => {
   // get logged‑in user from welcome area
