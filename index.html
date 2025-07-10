@@ -891,6 +891,8 @@ document.getElementById('openRadarButton').addEventListener('click', () => {
 });
 
 function startRadar(username) {
+    let angle = 0;
+  const sweepSpeed = 0.05;
   const socket = io();
 
   // Tell server we joined
@@ -910,8 +912,6 @@ function startRadar(username) {
   const ctx = canvas.getContext('2d');
   const center = canvas.width / 2;
   const radius = center - 10;
-  let angle = 0;
-  const sweepSpeed = 0.05;
 
   let allUsers = {}; // live users from server
 
