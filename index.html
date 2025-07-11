@@ -944,83 +944,85 @@ function openRules() {
   <audio id="beepSound" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg" preload="auto"></audio>
 
   <script>
-    // Firebase config and init
-    const firebaseConfig = {
-      apiKey: "AIzaSyAdmiUcQ_yZDL4Gg0r93HjqzPYQ6N-gzM8",
-      authDomain: "the-challenge-fa9b2.firebaseapp.com",
-      databaseURL: "https://the-challenge-fa9b2-default-rtdb.firebaseio.com",
-      projectId: "the-challenge-fa9b2",
-      storageBucket: "the-challenge-fa9b2.appspot.com",
-      messagingSenderId: "4102830619",
-      appId: "1:4102830619:web:581e033f36ec02708916be",
-      measurementId: "G-7M7JLK1V86"
-    };
+    document.addEventListener("DOMContentLoaded", () => {
+      // Firebase config and init
+      const firebaseConfig = {
+        apiKey: "AIzaSyAdmiUcQ_yZDL4Gg0r93HjqzPYQ6N-gzM8",
+        authDomain: "the-challenge-fa9b2.firebaseapp.com",
+        databaseURL: "https://the-challenge-fa9b2-default-rtdb.firebaseio.com",
+        projectId: "the-challenge-fa9b2",
+        storageBucket: "the-challenge-fa9b2.appspot.com",
+        messagingSenderId: "4102830619",
+        appId: "1:4102830619:web:581e033f36ec02708916be",
+        measurementId: "G-7M7JLK1V86"
+      };
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+      firebase.initializeApp(firebaseConfig);
+      const db = firebase.database();
 
-    let qrScanner = null;
-    let scanning = false;
+      let qrScanner = null;
+      let scanning = false;
 
-    document.getElementById('startScanBtn').addEventListener('click', () => {
-      const amountInput = document.getElementById('creditInput').value.trim();
-      if (amountInput === '' || isNaN(parseInt(amountInput))) {
-        alert("Please enter a valid amount before starting the scan.");
-        return;
-      }
-      if (scanning) return; // prevent multiple starts
-      scanning = true;
+      document.getElementById('startScanBtn').addEventListener('click', () => {
+        const amountInput = document.getElementById('creditInput').value.trim();
+        if (amountInput === '' || isNaN(parseInt(amountInput))) {
+          alert("Please enter a valid amount before starting the scan.");
+          return;
+        }
+        if (scanning) return; // prevent multiple starts
+        scanning = true;
 
-      document.getElementById('reader').style.display = 'block';
-      document.getElementById('userInfo').style.display = 'none';
+        document.getElementById('reader').style.display = 'block';
+        document.getElementById('userInfo').style.display = 'none';
 
-      qrScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
+        qrScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
 
-      qrScanner.render(onScanSuccess);
-    });
-
-    function onScanSuccess(decodedText) {
-      if (!scanning) return;
-
-      scanning = false;
-      qrScanner.clear().then(() => {
-        document.getElementById('reader').style.display = 'none';
-      }).catch(err => {
-        console.error("Failed to clear scanner", err);
+        qrScanner.render(onScanSuccess);
       });
 
-      const beep = document.getElementById('beepSound');
-      beep.play();
+      function onScanSuccess(decodedText) {
+        if (!scanning) return;
 
-      const scannedCode = decodedText.trim();
-      const amount = parseInt(document.getElementById('creditInput').value);
+        scanning = false;
+        qrScanner.clear().then(() => {
+          document.getElementById('reader').style.display = 'none';
+        }).catch(err => {
+          console.error("Failed to clear scanner", err);
+        });
 
-      db.ref('users').once('value', snapshot => {
-        const users = snapshot.val();
-        let found = false;
+        const beep = document.getElementById('beepSound');
+        beep.play();
 
-        for (let key in users) {
-          if (users[key].code === scannedCode) {
-            found = true;
-            const currentCredits = users[key].credits || 0;
-            const newCredits = currentCredits + amount;
+        const scannedCode = decodedText.trim();
+        const amount = parseInt(document.getElementById('creditInput').value);
 
-            // Update credits in Firebase
-            db.ref('users/' + key + '/credits').set(newCredits, () => {
-              document.getElementById('username').innerText = "User: " + key;
-              document.getElementById('credits').innerText = newCredits;
-              document.getElementById('userInfo').style.display = 'block';
-              alert(Updated credits for ${key}: ${newCredits});
-            });
-            break;
+        db.ref('users').once('value', snapshot => {
+          const users = snapshot.val();
+          let found = false;
+
+          for (let key in users) {
+            if (users[key].code === scannedCode) {
+              found = true;
+              const currentCredits = users[key].credits || 0;
+              const newCredits = currentCredits + amount;
+
+              // Update credits in Firebase
+              db.ref('users/' + key + '/credits').set(newCredits, () => {
+                document.getElementById('username').innerText = "User: " + key;
+                document.getElementById('credits').innerText = newCredits;
+                document.getElementById('userInfo').style.display = 'block';
+                alert(Updated credits for ${key}: ${newCredits});
+              });
+              break;
+            }
           }
-        }
 
-        if (!found) {
-          alert("No user found with this QR code.");
-        }
-      });
-    }
+          if (!found) {
+            alert("No user found with this QR code.");
+          }
+        });
+      }
+    });
   </script>
 
 </body>
