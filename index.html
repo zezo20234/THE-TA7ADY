@@ -22,7 +22,7 @@
             color: blue; /* ALL TEXT COLOR SET TO BLUE */
         }
         /* Specific elements and containers that hold text */
-        .login-box, form, #selfEditArea, #selfEditor, #accessCodeContainer, #creditCodeBox, footer, #shopContainer, #welcomeBox, .user-credit-management {
+        .login-box, form, #selfEditArea, #selfEditor, #accessCodeContainer, #creditCodeBox, footer, #shopContainer, #welcomeBox {
             max-width: 400px;
             margin: 20px auto;
             padding: 25px;
@@ -145,7 +145,7 @@
             display: inline-block;
             border-radius: 50px;
             background: blue; /* Background of the user buttons */
-            color: white; /* Changed to white for contrast on blue background */
+            color: blue; /* ALL TEXT COLOR SET TO BLUE - Note: Text on a blue background will be hard to read. You might want to change the background to a lighter color for contrast. */
             font-size: 16px;
             backdrop-filter: blur(10px);
             box-sizing: border-box;
@@ -156,7 +156,7 @@
             color: blue; /* ALL TEXT COLOR SET TO BLUE */
         }
         /* QR code container */
-        #qrcodeContainer { /* For generated credit codes */
+        #qrcodeContainer {
             margin-top: 20px;
             text-align: center;
             background: rgba(255, 255, 255, 0.9); /* White background for QR code */
@@ -165,30 +165,15 @@
             display: none; /* Hidden by default */
             color: blue; /* ALL TEXT COLOR SET TO BLUE */
         }
-        #qrcodeContainer img, #qrcodeContainer canvas { /* Target both img (qrcode.js) and canvas (qrious) */
+        #qrcodeContainer img {
             max-width: 100%;
             height: auto;
             display: block;
             margin: 0 auto;
         }
 
-        /* My personal QR code display */
-        #myQrCodeDisplay {
-            margin-top: 20px;
-            text-align: center;
-            background: rgba(255, 255, 255, 0.9);
-            padding: 10px;
-            border-radius: 10px;
-            display: none; /* Hidden by default */
-            color: blue;
-        }
-        #myQrCodeDisplay canvas {
-            display: block;
-            margin: 0 auto;
-        }
-
         /* QR Code Scanner */
-        #qr-reader { /* For redeeming credit codes */
+        #qr-reader {
             width: 100%;
             max-width: 300px; /* Limit scanner size */
             margin: 10px auto;
@@ -212,43 +197,6 @@
         }
         #startScannerButton, #stopScannerButton {
             margin-top: 10px;
-        }
-
-        /* Styles for bank's user credit management section */
-        #bankCreditManagement {
-            display: none; /* Hidden by default, shown when bank logs in */
-            text-align: center;
-            margin-top: 20px;
-        }
-        #bankCreditManagement .user-list-summary {
-            text-align: left;
-            margin-bottom: 20px;
-        }
-        #bankCreditManagement .user-list-summary div {
-            padding: 5px 0;
-            border-bottom: 1px dashed rgba(255,255,255,0.1);
-        }
-        #bankCreditManagement .user-list-summary div:last-child {
-            border-bottom: none;
-        }
-
-        .credit-adjust-area {
-            margin-top: 15px;
-            border-top: 1px solid rgba(255, 255, 255, 0.2);
-            padding-top: 15px;
-        }
-        .credit-adjust-area input {
-            width: calc(100% - 20px); /* Adjust for padding */
-        }
-        .scanner-controls {
-            margin-top: 20px;
-            border-top: 1px solid rgba(255, 255, 255, 0.2);
-            padding-top: 20px;
-        }
-        #scannerResult {
-            margin-top: 10px;
-            font-weight: bold;
-            color: blue;
         }
     </style>
 </head>
@@ -299,42 +247,10 @@
 
     <div id="welcomeBox" style="display:none; text-align:center; margin-top:20px;">
         <h1><span id="welcomeMessage"></span><span id="userWelcome"></span>!</h1>
-        <button onclick="toggleMyQrCode()" id="showMyQrButton" style="display:none;">Show My QR</button>
-        <div id="myQrCodeDisplay">
-            <h4>Your Personal QR Code</h4>
-            <canvas id="myQrCanvas"></canvas>
-            <p>Scan this to receive credits!</p>
-        </div>
     </div>
     <button class="btnshop" onclick="openShop()" style="display:none;">🛒 Open Shop</button>
     <button onclick="openRules()" style="display:none; margin: 10px auto; display: block; max-width: 400px; padding: 12px; border-radius: 30px; background: rgba(255,255,255,0.1); color: blue; border: 1px solid rgba(255,255,255,0.3);" id="rulesButton">Rules</button>
 
-    ---
-
-    <div id="bankCreditManagement" class="login-box">
-        <h2>Bank Credit Manager</h2>
-        <div class="user-list-summary">
-            <h3>Current Balances:</h3>
-            <div id="bankZezoCredits">zezo: 0</div>
-            <div id="bankLayanCredits">layan: 0</div>
-            <div id="bankAsserCredits">asser: 0</div>
-            <div id="bankBankCredits">bank: 0</div>
-        </div>
-
-        <hr>
-
-        <div class="scanner-controls">
-            <h3>Scan User QR to Adjust Credits</h3>
-            <input type="number" id="scanAdjustAmount" placeholder="Enter amount (+/-)" value="0">
-            <button onclick="startScanToAdjust()">Start Scan to Adjust</button>
-            <button id="stopScanToAdjustButton" onclick="stopScanToAdjust()" style="display:none;">Stop Scan</button>
-            <div id="qr-reader-scan-adjust" style="width: 300px; margin: 0 auto; display: none;"></div>
-            <p id="scannerResult" style="color: blue;"></p>
-        </div>
-    </div>
-    ---
-
-    <button onclick="openMoreOptions()" style="display:none; margin: 10px auto; display: block; max-width: 400px; padding: 12px; border-radius: 30px; background: rgba(255,255,255,0.1); color: blue; border: 1px solid rgba(255,255,255,0.3);" id="openMoreButton">Open More</button>
 
     <div id="shopContainer" style="display:none; border: 1px solid #ccc; padding: 10px; margin-top: 10px;">
         <h3>Shop</h3>
@@ -427,14 +343,13 @@
         // Import modular Firebase SDK functions
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.4/firebase-app.js";
         import { getDatabase, ref, get, set, onValue, update, remove } from "https://www.gstatic.com/firebasejs/9.6.4/firebase-database.js";
-        import { v4 as uuidv4 } from 'https://jspm.dev/uuid'; // Import uuid for unique QR data
 
         // Default users with passwords (you can add more)
         const defaultUsers = {
             asser: { password: "asser2025" },
             layan: { password: "layan999" },
             zezo: { password: "zezo2023" },
-            bank: { password: "bank" }
+            bank: { password: "bank" }  
         };
 
         // Firebase config
@@ -457,82 +372,8 @@
         let currentUserData = null;
         let infiniteCreditsActive = false; // Flag to track infinite credits
 
-        // HTML5-QRCode instances
-        let html5QrCodeRedeem = null; // For the existing credit code scanner
-        let html5QrCodeScanAdjust = null; // For the new credit adjustment scanner
-
-        // List of fixed users for the new credit management section (for bank display)
-        const fixedUsers = ['zezo', 'layan', 'asser', 'bank'];
-        let usersCreditData = {}; // To store credit data for all fixed users
-        let qrUidToUsernameMap = {}; // Map QR UIDs back to usernames (populated from Firebase)
-
-
-        // Function to load all user data, including generating/fetching qr_uid
-        async function loadAllUserData() {
-            const usersRef = ref(database, 'users');
-            try {
-                const snapshot = await get(usersRef);
-                const allUsersDb = snapshot.exists() ? snapshot.val() : {};
-
-                for (const username of fixedUsers) {
-                    let userData = allUsersDb[username];
-                    if (!userData) {
-                        userData = { credits: 0, days: 0, qr_uid: uuidv4() }; // Assign a new UUID if user doesn't exist
-                        await set(ref(database, 'users/' + username), userData);
-                    } else if (!userData.qr_uid) {
-                        userData.qr_uid = uuidv4(); // Assign a new UUID if qr_uid is missing
-                        await update(ref(database, 'users/' + username), { qr_uid: userData.qr_uid });
-                    }
-                    usersCreditData[username] = userData;
-                    qrUidToUsernameMap[userData.qr_uid] = username; // Populate map
-                }
-                // Also update current user data if it's one of the fixed users
-                if (currentUser && fixedUsers.includes(currentUser)) {
-                    currentUserData = usersCreditData[currentUser];
-                }
-                updateBankUserCreditDisplays(); // Update displays after loading
-            } catch (error) {
-                console.error("Error loading all user data:", error);
-                alert("Failed to load all user data.");
-            }
-        }
-
-        // Call this function when the app starts or after relevant changes
-        window.addEventListener('DOMContentLoaded', loadAllUserData);
-        onValue(ref(database, 'users'), (snapshot) => {
-            const allUsersDb = snapshot.exists() ? snapshot.val() : {};
-            fixedUsers.forEach(username => {
-                if (allUsersDb[username]) {
-                    usersCreditData[username] = allUsersDb[username];
-                    if (allUsersDb[username].qr_uid) {
-                         qrUidToUsernameMap[allUsersDb[username].qr_uid] = username; // Update map
-                    }
-                }
-            });
-            updateBankUserCreditDisplays(); // Update for bank user
-            // Also update current user's infoBox if they are logged in and their data changed
-            if (currentUser && usersCreditData[currentUser]) {
-                currentUserData = usersCreditData[currentUser];
-                document.getElementById("infoCredits").textContent = currentUserData.credits ?? 0;
-                document.getElementById("infoDays").textContent = currentUserData.days ?? 0;
-            }
-        });
-
-
-        function updateBankUserCreditDisplays() {
-            if (currentUser === 'bank') { // Only update these if bank is logged in
-                fixedUsers.forEach(username => {
-                    const creditsDiv = document.getElementById(`bank${capitalizeFirstLetter(username)}Credits`);
-                    if (creditsDiv && usersCreditData[username]) {
-                        creditsDiv.textContent = `${username}: ${usersCreditData[username].credits ?? 0}`;
-                    }
-                });
-            }
-        }
-
-        function capitalizeFirstLetter(string) {
-            return string.charAt(0).toUpperCase() + string.slice(1);
-        }
+        // HTML5-QRCode instance
+        let html5QrCode = null;
 
         // Login function (original, with password check)
         window.checkLogin = function (usernameOverride = null) { // Added usernameOverride parameter
@@ -564,18 +405,10 @@
                     if (snapshot.exists()) {
                         currentUserData = snapshot.val();
                     } else {
-                        // Ensure qr_uid is generated on first login if not present
-                        currentUserData = { credits: 0, days: 0, qr_uid: uuidv4() };
+                        currentUserData = { credits: 0, days: 0 };
                         set(userRef, currentUserData);
                     }
                     showWelcome();
-                    // Show specific sections based on logged-in user
-                    if (currentUser === 'bank') {
-                        document.getElementById('bankCreditManagement').style.display = 'block';
-                        updateBankUserCreditDisplays(); // Initial display update for bank
-                    } else {
-                        document.getElementById('bankCreditManagement').style.display = 'none';
-                    }
                 })
                 .catch((error) => {
                     alert("Error reading data: " + error);
@@ -595,7 +428,6 @@
                 document.querySelector('.btnshop').style.display = "block"; // Show shop open button
                 document.getElementById("rulesButton").style.display = "block"; // Show rules button
                 document.getElementById("openMoreButton").style.display = "block"; // Show open more button
-                document.getElementById("showMyQrButton").style.display = "block"; // Show "Show My QR" button
 
                 document.getElementById("infoCredits").textContent = currentUserData.credits ?? 0;
                 document.getElementById("infoDays").textContent = currentUserData.days ?? 0;
@@ -646,7 +478,6 @@
                 currentUserData.days = newDays;
                 document.getElementById("infoCredits").textContent = newCredits;
                 document.getElementById("infoDays").textContent = newDays;
-                updateBankUserCreditDisplays(); // Update bank's display if bank is logged in
             }).catch(err => {
                 alert("Error saving data: " + err);
             });
@@ -705,18 +536,10 @@
                     if (snapshot.exists()) {
                         currentUserData = snapshot.val();
                     } else {
-                        // Ensure qr_uid is generated if not present on auto-login
-                        currentUserData = { credits: 0, days: 0, qr_uid: uuidv4() };
+                        currentUserData = { credits: 0, days: 0 };
                         set(userRef, currentUserData);
                     }
                     showWelcome();
-                    // Show specific sections based on logged-in user
-                    if (currentUser === 'bank') {
-                        document.getElementById('bankCreditManagement').style.display = 'block';
-                        updateBankUserCreditDisplays();
-                    } else {
-                        document.getElementById('bankCreditManagement').style.display = 'none';
-                    }
                 }).catch(error => {
                     alert("Auto-login error: " + error);
                 });
@@ -742,37 +565,23 @@
             document.querySelector('.btnshop').style.display = "none"; // Hide shop open button
             document.getElementById("rulesButton").style.display = "none"; // Hide rules button
             document.getElementById("openMoreButton").style.display = "none"; // Hide open more button
-            document.getElementById("bankCreditManagement").style.display = 'none'; // Hide bank section
 
             document.getElementById("quickAccessCodeInput").value = "";
             document.getElementById("quickUserList").style.display = "none";
 
-            // Clear and hide generated credit code QR
+            // Clear the QR code on logout
             document.getElementById("qrcodeContainer").innerHTML = '';
             document.getElementById("qrcodeContainer").style.display = 'none';
 
-            // Clear and hide my personal QR code
-            document.getElementById("myQrCodeDisplay").style.display = 'none';
-            document.getElementById("myQrCanvas").getContext('2d').clearRect(0, 0, document.getElementById("myQrCanvas").width, document.getElementById("myQrCanvas").height);
-
-
-            // Hide scanner elements for credit codes
+            // Hide scanner elements
             document.getElementById("qr-reader").style.display = 'none';
             document.getElementById("startScannerButton").style.display = 'block';
             document.getElementById("stopScannerButton").style.display = 'none';
             document.getElementById("redeemCodeInput").style.display = 'none';
             document.getElementById("redeemManualButton").style.display = 'none';
-            if (html5QrCodeRedeem && html5QrCodeRedeem.isScanning) {
-                html5QrCodeRedeem.stop().catch(err => console.error("Error stopping redeem scanner on logout:", err));
+            if (html5QrCode && html5QrCode.isScanning) {
+                html5QrCode.stop().catch(err => console.error("Error stopping scanner on logout:", err));
             }
-            // Stop and hide the new credit adjustment scanner
-            if (html5QrCodeScanAdjust && html5QrCodeScanAdjust.isScanning) {
-                html5QrCodeScanAdjust.stop().catch(err => console.error("Error stopping adjust scanner on logout:", err));
-            }
-            document.getElementById('qr-reader-scan-adjust').style.display = 'none';
-            document.getElementById('stopScanToAdjustButton').style.display = 'none';
-            document.getElementById('startScanToAdjustButton').style.display = 'block'; // Ensure it's back
-            document.getElementById('scannerResult').textContent = '';
 
 
             alert("You have been logged out.");
@@ -829,7 +638,6 @@
                 currentUserData.days = newDays;
                 document.getElementById("infoCredits").textContent = newCredits;
                 document.getElementById("infoDays").textContent = newDays;
-                updateBankUserCreditDisplays(); // Update bank's display if bank is logged in
                 alert("Purchase successful!");
             }).catch(err => {
                 alert("Error updating data: " + err);
@@ -861,7 +669,7 @@
             if (currentUserData.credits < creditsCost) {
                 alert("You need " + creditsCost + " credits to buy Infinite Credits!");
                 return;
-            }
+                }
 
             const newCredits = currentUserData.credits - creditsCost;
             const userRef = ref(database, "users/" + currentUser);
@@ -881,15 +689,17 @@
             });
         };
 
-        // --- QR Code Generation Function for Credit Codes ---
+        // --- QR Code Generation Function ---
         function generateQRCode(text) {
             const qrcodeContainer = document.getElementById("qrcodeContainer");
             qrcodeContainer.innerHTML = ""; // Clear any existing QR code
+            // Show the QR code container
             qrcodeContainer.style.display = 'block';
 
+            // Create a new QRCode instance
             new QRCode(qrcodeContainer, {
                 text: text,
-                width: 150,
+                width: 150, // Slightly larger for better scanning
                 height: 150,
                 colorDark : "#0000FF", // Changed to blue for QR code dots
                 colorLight : "#FFFFFF",
@@ -897,40 +707,11 @@
             });
         }
 
-        // --- My Personal QR Code Generation/Display ---
-        window.toggleMyQrCode = function() {
-            const myQrDisplay = document.getElementById("myQrCodeDisplay");
-            if (myQrDisplay.style.display === 'block') {
-                myQrDisplay.style.display = 'none';
-            } else {
-                if (currentUserData && currentUserData.qr_uid) {
-                    const canvasElement = document.getElementById("myQrCanvas");
-                    // Clear previous QR code
-                    const context = canvasElement.getContext('2d');
-                    context.clearRect(0, 0, canvasElement.width, canvasElement.height);
-
-                    new QRCode(canvasElement, {
-                        text: currentUserData.qr_uid, // Encode the user's unique QR UID
-                        width: 150,
-                        height: 150,
-                        colorDark : "#0000FF",
-                        colorLight : "#FFFFFF",
-                        correctLevel : QRCode.CorrectLevel.H
-                    });
-                    myQrDisplay.style.display = 'block';
-                } else {
-                    alert("Your personal QR code is not available yet. Please try logging in again.");
-                    console.error("currentUserData or qr_uid missing for current user.");
-                }
-            }
-        };
-
-
         // --- Credit Code Generation ---
         window.generateCreditCode = function() {
             const amountToCode = parseInt(document.getElementById("createCodeAmount").value, 10);
 
-            if (!currentUserData) { // Use currentUserData instead of direct Firebase read
+            if (!currentUser) {
                 alert("You must be logged in.");
                 return;
             }
@@ -966,9 +747,8 @@
                 currentUserData.credits = senderNewCredits;
                 document.getElementById("infoCredits").textContent = senderNewCredits;
                 document.getElementById("createCodeAmount").value = ''; // Clear the input field
-                updateBankUserCreditDisplays(); // Update bank's display if bank is logged in
 
-                alert(`QR Code generated for ${amountToCode} credits! Code: ${newCode}`);
+                alert(`QR Code generated for ${amountToCode} credits!`);
 
                 // --- Generate QR Code for the newCode ---
                 generateQRCode(newCode);
@@ -1022,7 +802,6 @@
                 currentUserData.credits = newCredits;
                 document.getElementById("infoCredits").textContent = newCredits;
                 document.getElementById("redeemCodeInput").value = ''; // Clear input field
-                updateBankUserCreditDisplays(); // Update bank's display if bank is logged in
 
                 alert(`Successfully redeemed ${creditsToAdd} credits! Your new balance is ${newCredits}.`);
 
@@ -1032,10 +811,10 @@
             }
         };
 
-        // --- QR Code Scanner Functions for Credit Codes ---
+        // --- QR Code Scanner Functions ---
         window.startQrCodeScanner = function() {
-            if (!html5QrCodeRedeem) {
-                html5QrCodeRedeem = new Html5Qrcode("qr-reader");
+            if (!html5QrCode) {
+                html5QrCode = new Html5Qrcode("qr-reader");
             }
 
             const qrReaderDiv = document.getElementById('qr-reader');
@@ -1045,7 +824,7 @@
             document.getElementById('redeemCodeInput').style.display = 'block'; // Show manual input as well
             document.getElementById('redeemManualButton').style.display = 'block';
 
-            html5QrCodeRedeem.start(
+            html5QrCode.start(
                 { facingMode: "environment" }, // Prefer back camera
                 {
                     fps: 10,    // frames per second
@@ -1054,12 +833,10 @@
                 (decodedText, decodedResult) => {
                     // console.log(`QR Code detected: ${decodedText}`);
                     if (decodedText) {
-                        html5QrCodeRedeem.stop().then(() => {
+                        html5QrCode.stop().then(() => {
                             // console.log("QR Code scanner stopped.");
                             document.getElementById('qr-reader').style.display = 'none';
                             document.getElementById('stopScannerButton').style.display = 'none';
-                            document.getElementById('redeemCodeInput').style.display = 'none'; // Hide manual input after scan
-                            document.getElementById('redeemManualButton').style.display = 'none'; // Hide manual button after scan
                             window.redeemCreditCode(decodedText); // Redeem the scanned code
                         }).catch(err => {
                             console.error("Error stopping scanner:", err);
@@ -1079,8 +856,8 @@
         };
 
         window.stopQrCodeScanner = function() {
-            if (html5QrCodeRedeem && html5QrCodeRedeem.isScanning) {
-                html5QrCodeRedeem.stop().then(() => {
+            if (html5QrCode && html5QrCode.isScanning) {
+                html5QrCode.stop().then(() => {
                     // console.log("QR Code scanner stopped.");
                     document.getElementById('qr-reader').style.display = 'none';
                     document.getElementById('startScannerButton').style.display = 'block';
@@ -1093,170 +870,76 @@
             }
         };
 
-        // --- NEW: Start QR Code Scanner for Adjusting Credits (Bank only) ---
-        window.startScanToAdjust = function() {
-            if (!currentUser || currentUser !== 'bank') {
-                alert("Only the 'bank' user can adjust credits via scanning.");
-                return;
-            }
-
-            const scanAdjustAmountInput = document.getElementById('scanAdjustAmount');
-            const amount = parseInt(scanAdjustAmountInput.value, 10);
-
-            if (isNaN(amount) || amount === 0) {
-                alert("Please enter a valid amount (positive to add, negative to deduct) before scanning.");
-                return;
-            }
-
-            document.getElementById('scannerResult').textContent = 'Scanning...';
-            const qrReaderDiv = document.getElementById('qr-reader-scan-adjust');
-            qrReaderDiv.style.display = 'block';
-            document.getElementById('startScanToAdjust').style.display = 'none'; // Hide "Start" button
-            document.getElementById('stopScanToAdjustButton').style.display = 'block'; // Show "Stop" button
-
-
-            if (!html5QrCodeScanAdjust) {
-                html5QrCodeScanAdjust = new Html5Qrcode("qr-reader-scan-adjust");
-            }
-
-            html5QrCodeScanAdjust.start(
-                { facingMode: "environment" },
-                { fps: 10, qrbox: { width: 250, height: 250 } },
-                async (decodedQrUid, decodedResult) => {
-                    // QR code detected for adjustment!
-                    if (decodedQrUid) {
-                        html5QrCodeScanAdjust.stop().then(() => {
-                            document.getElementById('qr-reader-scan-adjust').style.display = 'none';
-                            document.getElementById('stopScanToAdjustButton').style.display = 'none';
-                            document.getElementById('startScanToAdjust').style.display = 'block'; // Show "Start" button again
-
-                            // Find username by qr_uid
-                            const targetUsername = qrUidToUsernameMap[decodedQrUid];
-                            if (targetUsername) {
-                                adjustUserCreditsByScanner(targetUsername, amount);
-                            } else {
-                                document.getElementById('scannerResult').textContent = 'Error: Scanned QR does not belong to a registered user.';
-                                alert('Error: Scanned QR does not belong to a registered user.');
-                            }
-                        }).catch(err => {
-                            console.error("Error stopping scanner after scan:", err);
-                            document.getElementById('scannerResult').textContent = 'Error stopping scanner.';
-                        });
-                    }
-                },
-                (errorMessage) => {
-                    // console.warn(`Scanner error: ${errorMessage}`);
-                }
-            ).catch((err) => {
-                console.error(`Unable to start QR Code adjustment scanner: ${err}`);
-                alert("Error starting QR adjustment scanner. Please ensure camera access is granted.");
-                document.getElementById('qr-reader-scan-adjust').style.display = 'none';
-                document.getElementById('startScanToAdjust').style.display = 'block';
-                document.getElementById('stopScanToAdjustButton').style.display = 'none';
-            });
-        };
-
-        // --- NEW: Stop QR Code Scanner for Adjusting Credits ---
-        window.stopScanToAdjust = function() {
-            if (html5QrCodeScanAdjust && html5QrCodeScanAdjust.isScanning) {
-                html5QrCodeScanAdjust.stop().then(() => {
-                    document.getElementById('qr-reader-scan-adjust').style.display = 'none';
-                    document.getElementById('stopScanToAdjustButton').style.display = 'none';
-                    document.getElementById('startScanToAdjust').style.display = 'block';
-                    document.getElementById('scannerResult').textContent = 'Scanner stopped.';
-                }).catch(err => {
-                    console.error("Error stopping adjustment scanner:", err);
-                });
-            }
-        };
-
-        // --- NEW: Adjust User Credits by Scanner (internal function) ---
-        async function adjustUserCreditsByScanner(targetUsername, amount) {
-            const userRef = ref(database, 'users/' + targetUsername);
-            try {
-                const snapshot = await get(userRef);
-                if (!snapshot.exists()) {
-                    alert(`User ${targetUsername} not found.`);
-                    document.getElementById('scannerResult').textContent = `User ${targetUsername} not found.`;
-                    return;
-                }
-
-                const currentCredits = snapshot.val().credits ?? 0;
-                const newCredits = currentCredits + amount;
-
-                await update(userRef, { credits: newCredits });
-
-                usersCreditData[targetUsername].credits = newCredits; // Update local data
-                updateBankUserCreditDisplays(); // Refresh UI for all users
-
-                document.getElementById('scanAdjustAmount').value = 0; // Reset input
-
-                let action = amount > 0 ? "added to" : "deducted from";
-                alert(`Successfully ${Math.abs(amount)} credits ${action} ${targetUsername}. New balance: ${newCredits}.`);
-                document.getElementById('scannerResult').textContent = `${Math.abs(amount)} credits ${action} ${targetUsername}. New balance: ${newCredits}.`;
-
-            } catch (error) {
-                console.error("Error adjusting credits:", error);
-                alert("Error adjusting credits. Please try again.");
-                document.getElementById('scannerResult').textContent = `Error: ${error.message}`;
-            }
-        }
-
-
-        // Function to decrease days by 1 at midnight if user has days > 0
-        function setupDailyDaysDecrement() {
-          const now = new Date();
-          // Calculate milliseconds until the next midnight (tomorrow at 00:00:00)
-          const millisTillMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0, 0) - now;
-
-          setTimeout(function() {
-            decrementDays();
-
-            // Then set interval to run every 24h afterwards
-            setInterval(decrementDays, 24 * 60 * 60 * 1000);
-          }, millisTillMidnight);
-        }
-
-        // This function should be robust to run even if the user isn't logged in at midnight
-        // It iterates over all known users and decrements their days if > 0
-        async function decrementDays() {
-            console.log("Attempting to decrement days for all users.");
-            const usersRef = ref(database, 'users');
-            try {
-                const snapshot = await get(usersRef);
-                if (snapshot.exists()) {
-                    const allUsers = snapshot.val();
-                    const updates = {};
-                    let changesMade = false;
-
-                    for (const username in allUsers) {
-                        if (allUsers[username] && (allUsers[username].days ?? 0) > 0) {
-                            updates[`/${username}/days`] = allUsers[username].days - 1;
-                            changesMade = true;
-                        }
-                    }
-
-                    if (changesMade) {
-                        await update(usersRef, updates);
-                        console.log("Days decremented for relevant users in Firebase.");
-                    } else {
-                        console.log("No users with days > 0 to decrement.");
-                    }
-                }
-            } catch (err) {
-                console.error("Error decrementing days for all users:", err);
-            }
-        }
-
-        // Call this function once when the app loads
-        setupDailyDaysDecrement();
-
-
-        // Function to open the rules page
-        window.openRules = function() {
-            window.open('rules.html', '_blank'); // Opens 'rules.html' in a new tab/window
-        }
-
     </script>
+
+    <script>
+// Function to decrease days by 1 at midnight if user has days > 0
+function setupDailyDaysDecrement() {
+  const now = new Date();
+  const millisTillMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0, 0) - now;
+
+  setTimeout(function() {
+    decrementDays();
+
+    // Then set interval to run every 24h afterwards
+    setInterval(decrementDays, 24 * 60 * 60 * 1000);
+  }, millisTillMidnight);
+}
+
+function decrementDays() {
+  if (currentUserData && currentUserData.days > 0) {
+    const userRef = ref(database, 'users/' + currentUser);
+    const newDays = currentUserData.days - 1;
+
+    update(userRef, { days: newDays }).then(() => {
+      currentUserData.days = newDays;
+      document.getElementById("infoDays").textContent = newDays;
+      console.log("Days decremented by 1 at midnight.");
+    }).catch(err => {
+      console.error("Error decrementing days:", err);
+    });
+  }
+}
+
+// Call this function after login and data loaded
+setupDailyDaysDecrement();
+</script>
+<script>
+// Function to open the rules page
+function openRules() {
+  window.open('rules.html', '_blank'); // Opens 'rules.html' in a new tab/window
+}
+
+</script>
+<button onclick="openMoreOptions()" style="display:none; margin: 10px auto; display: block; max-width: 400px; padding: 12px; border-radius: 30px; background: rgba(255,255,255,0.1); color: blue; border: 1px solid rgba(255,255,255,0.3);" id="openMoreButton">Open More</button>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Credit Management System</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>Credit Management</h1>
+
+    <div id="user-sections">
+        </div>
+
+    <hr>
+
+    <h2>Credit Scanner</h2>
+    <div id="scanner-area">
+        <video id="qr-scanner-video" width="300" height="200" style="border: 1px solid gray;"></video>
+        <p>Scan a user's QR code:</p>
+        <input type="number" id="scan-amount" placeholder="Enter amount (+/-500)">
+        <button id="deduct-scan-btn">Deduct (Scan)</button>
+        <button id="add-scan-btn">Add (Scan)</button>
+        <p id="scan-result"></p>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script> <script src="https://cdn.jsdelivr.net/npm/jsqr@1.0.0/dist/jsQR.min.js"></script> <script src="app.js"></script>
 </body>
 </html>
