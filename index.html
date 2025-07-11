@@ -1,904 +1,974 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>CHALLENGE</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CHALLENGE</title>
 
-    <link rel="apple-touch-icon" sizes="180x180" href="masr.png" />
-    <link rel="icon" type="image/png" sizes="192x192" href="masr.png" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-title" content="THE CHALLENGE" />
-    <meta name="mobile-web-app-capable" content="yes" />
+<link rel="apple-touch-icon" sizes="180x180" href="masr.png" />
+<link rel="icon" type="image/png" sizes="192x192" href="masr.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="THE CHALLENGE" />
+<meta name="mobile-web-app-capable" content="yes" />
 <script src="https://unpkg.com/html5-qrcode@2.2.1/html5-qrcode.min.js"></script>
-    <style>
-        /* Base text color for the entire body */
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background: url('modern.jpg') no-repeat center center fixed;
-            background-size: cover;
-            color: blue; /* ALL TEXT COLOR SET TO BLUE */
-        }
-        /* Specific elements and containers that hold text */
-        .login-box, form, #selfEditArea, #selfEditor, #accessCodeContainer, #creditCodeBox, footer, #shopContainer, #welcomeBox {
-            max-width: 400px;
-            margin: 20px auto;
-            padding: 25px;
-            border-radius: 30px;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(100px) saturate(180%);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            color: blue; /* ALL TEXT COLOR SET TO BLUE */
-        }
-        /* Inputs, buttons, selects, and text areas */
-        input, button, select, textarea {
-            width: 100%;
-            padding: 12px;
-            margin: 10px 0;
-            border-radius: 50px;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            background: rgba(255, 255, 255, 0.2);
-            color: blue; /* ALL TEXT COLOR SET TO BLUE, including placeholder text */
-            font-size: 16px;
-            backdrop-filter: blur(10px);
-            box-sizing: border-box;
-        }
-        /* Placeholder text color for inputs and textareas */
-        input::placeholder, textarea::placeholder {
-            color: blue; /* Ensures placeholder text is also blue */
-            opacity: 0.7; /* Adjust opacity if needed for readability */
-        }
-        /* Hover state for buttons */
-        button:hover {
-            background: rgba(255, 255, 255, 0.3);
-            color: blue; /* ALL TEXT COLOR SET TO BLUE */
-            cursor: pointer;
-        }
-        /* Labels for form elements */
-        label {
-            font-weight: bold;
-            display: block;
-            margin-top: 10px;
-            color: blue; /* ALL TEXT COLOR SET TO BLUE */
-        }
-        /* Info box in the top left */
-        #infoBox {
-            position: fixed;
-            top: 10px;
-            left: 10px;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(15px);
-            border-radius: 20px;
-            padding: 10px 20px;
-            font-weight: bold;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-            display: none;
-            color: blue; /* ALL TEXT COLOR SET TO BLUE */
-            z-index: 9999; /* HIGHEST Z-INDEX */
-        }
-        /* Shop button */
-        .btnshop {
-            width: fit-content;
-            margin: auto;
-            color: blue; /* ALL TEXT COLOR SET TO BLUE */
-        }
-        /* Login lock icon animation */
-        #loginLockIcon svg {
-            overflow: visible;
-        }
-        @keyframes lockOpen {
-            0% {
-                transform: rotate(0deg);
-                transform-origin: 50% 75%;
-            }
-            100% {
-                transform: rotate(-45deg);
-            }
-        }
-        #loginLockIcon.open #lockShackle {
-            animation: lockOpen 0.1s forwards ease-in-out;
-            stroke: blue; /* Changed from limegreen to blue - this is a stroke, not text */
-        }
-        /* Fade-in and drop-in animations */
-        .fade-in {
-            animation: fadeInEffect 0.1s ease forwards;
-        }
-        @keyframes fadeInEffect {
-            from {
-                opacity: 5;
-            }
-            to {
-                opacity: 1;
-            }
-        }
-        .letter {
-            display: inline-block;
-            opacity: 0;
-            animation: dropIn 0.6s ease forwards;
-            color: blue; /* ALL TEXT COLOR SET TO BLUE */
-        }
-        @keyframes dropIn {
-            0% {
-                opacity: 0;
-                transform: translateY(-40px);
-            }
-            100% {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        /* User list for quick access */
-        .user-list {
-            display: none;
-            margin-top: 20px;
-            text-align: center;
-        }
-        .user {
-            cursor: pointer;
-            margin: 10px;
-            padding: 12px 25px;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            display: inline-block;
-            border-radius: 50px;
-            background: blue; /* Background of the user buttons */
-            color: blue; /* ALL TEXT COLOR SET TO BLUE - Note: Text on a blue background will be hard to read. You might want to change the background to a lighter color for contrast. */
-            font-size: 16px;
-            backdrop-filter: blur(10px);
-            box-sizing: border-box;
-            transition: background 0.3s ease, color 0.3s ease;
-        }
-        .user:hover {
-            background: rgba(255, 255, 255, 0.3);
-            color: blue; /* ALL TEXT COLOR SET TO BLUE */
-        }
-        /* QR code container */
-        #qrcodeContainer {
-            margin-top: 20px;
-            text-align: center;
-            background: rgba(255, 255, 255, 0.9); /* White background for QR code */
-            padding: 10px;
-            border-radius: 10px;
-            display: none; /* Hidden by default */
-            color: blue; /* ALL TEXT COLOR SET TO BLUE */
-        }
-        #qrcodeContainer img {
-            max-width: 100%;
-            height: auto;
-            display: block;
-            margin: 0 auto;
-        }
+<style>
+/* Base text color for the entire body */
+body {
+font-family: Arial, sans-serif;
+margin: 0;
+padding: 20px;
+background: url('modern.jpg') no-repeat center center fixed;
+background-size: cover;
+color: blue; /* ALL TEXT COLOR SET TO BLUE */
+}
+/* Specific elements and containers that hold text */
+.login-box, form, #selfEditArea, #selfEditor, #accessCodeContainer, #creditCodeBox, footer, #shopContainer, #welcomeBox {
+max-width: 400px;
+margin: 20px auto;
+padding: 25px;
+border-radius: 30px;
+background: rgba(255, 255, 255, 0.1);
+backdrop-filter: blur(100px) saturate(180%);
+border: 1px solid rgba(255, 255, 255, 0.2);
+box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+color: blue; /* ALL TEXT COLOR SET TO BLUE */
+}
+/* Inputs, buttons, selects, and text areas */
+input, button, select, textarea {
+width: 100%;
+padding: 12px;
+margin: 10px 0;
+border-radius: 50px;
+border: 1px solid rgba(255, 255, 255, 0.3);
+background: rgba(255, 255, 255, 0.2);
+color: blue; /* ALL TEXT COLOR SET TO BLUE, including placeholder text */
+font-size: 16px;
+backdrop-filter: blur(10px);
+box-sizing: border-box;
+}
+/* Placeholder text color for inputs and textareas */
+input::placeholder, textarea::placeholder {
+color: blue; /* Ensures placeholder text is also blue */
+opacity: 0.7; /* Adjust opacity if needed for readability */
+}
+/* Hover state for buttons */
+button:hover {
+background: rgba(255, 255, 255, 0.3);
+color: blue; /* ALL TEXT COLOR SET TO BLUE */
+cursor: pointer;
+}
+/* Labels for form elements */
+label {
+font-weight: bold;
+display: block;
+margin-top: 10px;
+color: blue; /* ALL TEXT COLOR SET TO BLUE */
+}
+/* Info box in the top left */
+#infoBox {
+position: fixed;
+top: 10px;
+left: 10px;
+background: rgba(255, 255, 255, 0.1);
+backdrop-filter: blur(15px);
+border-radius: 20px;
+padding: 10px 20px;
+font-weight: bold;
+border: 1px solid rgba(255, 255, 255, 0.2);
+box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+display: none;
+color: blue; /* ALL TEXT COLOR SET TO BLUE */
+z-index: 9999; /* HIGHEST Z-INDEX */
+}
+/* Shop button */
+.btnshop {
+width: fit-content;
+margin: auto;
+color: blue; /* ALL TEXT COLOR SET TO BLUE */
+}
+/* Login lock icon animation */
+#loginLockIcon svg {
+overflow: visible;
+}
+@keyframes lockOpen {
+0% {
+transform: rotate(0deg);
+transform-origin: 50% 75%;
+}
+100% {
+transform: rotate(-45deg);
+}
+}
+#loginLockIcon.open #lockShackle {
+animation: lockOpen 0.1s forwards ease-in-out;
+stroke: blue; /* Changed from limegreen to blue - this is a stroke, not text */
+}
+/* Fade-in and drop-in animations */
+.fade-in {
+animation: fadeInEffect 0.1s ease forwards;
+}
+@keyframes fadeInEffect {
+from {
+opacity: 5;
+}
+to {
+opacity: 1;
+}
+}
+.letter {
+display: inline-block;
+opacity: 0;
+animation: dropIn 0.6s ease forwards;
+color: blue; /* ALL TEXT COLOR SET TO BLUE */
+}
+@keyframes dropIn {
+0% {
+opacity: 0;
+transform: translateY(-40px);
+}
+100% {
+opacity: 1;
+transform: translateY(0);
+}
+}
+/* User list for quick access */
+.user-list {
+display: none;
+margin-top: 20px;
+text-align: center;
+}
+.user {
+cursor: pointer;
+margin: 10px;
+padding: 12px 25px;
+border: 1px solid rgba(255, 255, 255, 0.3);
+display: inline-block;
+border-radius: 50px;
+background: blue; /* Background of the user buttons */
+color: blue; /* ALL TEXT COLOR SET TO BLUE - Note: Text on a blue background will be hard to read. You might want to change the background to a lighter color for contrast. */
+font-size: 16px;
+backdrop-filter: blur(10px);
+box-sizing: border-box;
+transition: background 0.3s ease, color 0.3s ease;
+}
+.user:hover {
+background: rgba(255, 255, 255, 0.3);
+color: blue; /* ALL TEXT COLOR SET TO BLUE */
+}
+/* QR code container */
+#qrcodeContainer {
+margin-top: 20px;
+text-align: center;
+background: rgba(255, 255, 255, 0.9); /* White background for QR code */
+padding: 10px;
+border-radius: 10px;
+display: none; /* Hidden by default */
+color: blue; /* ALL TEXT COLOR SET TO BLUE */
+}
+#qrcodeContainer img {
+max-width: 100%;
+height: auto;
+display: block;
+margin: 0 auto;
+}
 
-        /* QR Code Scanner */
-        #qr-reader {
-            width: 100%;
-            max-width: 300px; /* Limit scanner size */
-            margin: 10px auto;
-            border-radius: 10px;
-            overflow: hidden; /* Ensures video fits rounded corners */
-            background: rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-            display: none; /* Hidden by default */
-        }
-        #qr-reader__dashboard {
-            background: rgba(255, 255, 255, 0.1);
-            color: blue; /* ALL TEXT COLOR SET TO BLUE */
-            padding: 10px;
-            border-top: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        #qr-reader video {
-            width: 100% !important;
-            height: auto !important;
-        }
-        #startScannerButton, #stopScannerButton {
-            margin-top: 10px;
-        }
-    </style>
+/* QR Code Scanner */
+#qr-reader {
+width: 100%;
+max-width: 300px; /* Limit scanner size */
+margin: 10px auto;
+border-radius: 10px;
+overflow: hidden; /* Ensures video fits rounded corners */
+background: rgba(255, 255, 255, 0.2);
+backdrop-filter: blur(10px);
+border: 1px solid rgba(255, 255, 255, 0.3);
+box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+display: none; /* Hidden by default */
+}
+#qr-reader__dashboard {
+background: rgba(255, 255, 255, 0.1);
+color: blue; /* ALL TEXT COLOR SET TO BLUE */
+padding: 10px;
+border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+#qr-reader video {
+width: 100% !important;
+height: auto !important;
+}
+#startScannerButton, #stopScannerButton {
+margin-top: 10px;
+}
+</style>
 </head>
 <body>
 
-    <div id="infoBox">
-        <div>Credits: <span id="infoCredits">0</span></div>
-        <div>Days: <span id="infoDays">0</span></div>
-        <div>Version: <span id="infoVersion">45</span></div>
-        <div id="infoChallenge">Challenge: No challenge set.</div>
-    </div>
-    <button id="logoutButton" onclick="logout()" style="display:none; margin: 20px auto; display: block; max-width: 400px; padding: 12px; border-radius: 30px; background: rgba(255,255,255,0.1); color: blue; border: 1px solid rgba(255,255,255,0.3);">Log Out</button>
+<div id="infoBox">
+<div>Credits: <span id="infoCredits">0</span></div>
+<div>Days: <span id="infoDays">0</span></div>
+<div>Version: <span id="infoVersion">45</span></div>
+<div id="infoChallenge">Challenge: No challenge set.</div>
+</div>
+<button id="logoutButton" onclick="logout()" style="display:none; margin: 20px auto; display: block; max-width: 400px; padding: 12px; border-radius: 30px; background: rgba(255,255,255,0.1); color: blue; border: 1px solid rgba(255,255,255,0.3);">Log Out</button>
 
-    <div class="login-box" id="loginBox">
-        <h2 style="text-align:center;">
-            Login
-            <span id="loginLockIcon" style="display:inline-block; width:24px; height:24px; vertical-align:middle; margin-left:8px;">
-                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" >
-                    <path id="lockShackle" d="M6 10V7a6 6 0 1112 0v3" stroke="blue" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <rect x="6" y="10" width="12" height="10" rx="2" ry="2" stroke="blue" stroke-width="2" />
-                </svg>
-            </span>
-        </h2>
-        <input type="text" id="username" placeholder="Username" autocomplete="on" />
-        <input type="password" id="password" placeholder="Password" autocomplete="on" />
+<div class="login-box" id="loginBox">
+<h2 style="text-align:center;">
+Login
+<span id="loginLockIcon" style="display:inline-block; width:24px; height:24px; vertical-align:middle; margin-left:8px;">
+<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" >
+    <path id="lockShackle" d="M6 10V7a6 6 0 1112 0v3" stroke="blue" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="6" y="10" width="12" height="10" rx="2" ry="2" stroke="blue" stroke-width="2" />
+</svg>
+</span>
+</h2>
+<input type="text" id="username" placeholder="Username" autocomplete="on" />
+<input type="password" id="password" placeholder="Password" autocomplete="on" />
 
-        <label style="display: flex; align-items: center; gap: 8px; margin-top: 10px;">
-            <input type="checkbox" id="keepSignedIn" /> Keep me signed in
-        </label>
-        <button onclick="checkLogin()">Login</button>
+<label style="display: flex; align-items: center; gap: 8px; margin-top: 10px;">
+<input type="checkbox" id="keepSignedIn" /> Keep me signed in
+</label>
+<button onclick="checkLogin()">Login</button>
 
-        <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.2); margin: 20px 0;">
+<hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.2); margin: 20px 0;">
 
-        <div id="accessCodeContainer">
-            <h3 style="text-align:center;">Quick Access (with code)</h3>
-            <input type="password" id="quickAccessCodeInput" placeholder="Enter Quick Access Code" />
-            <button onclick="checkQuickAccessCode()">Unlock Quick Access</button>
+<div id="accessCodeContainer">
+<h3 style="text-align:center;">Quick Access (with code)</h3>
+<input type="password" id="quickAccessCodeInput" placeholder="Enter Quick Access Code" />
+<button onclick="checkQuickAccessCode()">Unlock Quick Access</button>
 
-            <div class="user-list" id="quickUserList">
-                <p>Select a User for Quick Access:</p>
-                <div class="user" onclick="quickLoginUser('zezo')">zezo</div>
-                <div class="user" onclick="quickLoginUser('layan')">layan</div>
-                <div class="user" onclick="quickLoginUser('asser')">asser</div>
-                <div class="user" onclick="quickLoginUser('bank')">BANK</div>
-            </div>
-        </div>
-    </div>
+<div class="user-list" id="quickUserList">
+<p>Select a User for Quick Access:</p>
+<div class="user" onclick="quickLoginUser('zezo')">zezo</div>
+<div class="user" onclick="quickLoginUser('layan')">layan</div>
+<div class="user" onclick="quickLoginUser('asser')">asser</div>
+<div class="user" onclick="quickLoginUser('bank')">BANK</div>
+</div>
+</div>
+</div>
 
-    <div id="welcomeBox" style="display:none; text-align:center; margin-top:20px;">
-        <h1><span id="welcomeMessage"></span><span id="userWelcome"></span>!</h1>
-    </div>
-    <button class="btnshop" onclick="openShop()" style="display:none;">🛒 Open Shop</button>
-    <button onclick="openRules()" style="display:none; margin: 10px auto; display: block; max-width: 400px; padding: 12px; border-radius: 30px; background: rgba(255,255,255,0.1); color: blue; border: 1px solid rgba(255,255,255,0.3);" id="rulesButton">Rules</button>
+<div id="welcomeBox" style="display:none; text-align:center; margin-top:20px;">
+<h1><span id="welcomeMessage"></span><span id="userWelcome"></span>!</h1>
+</div>
+<button class="btnshop" onclick="openShop()" style="display:none;">🛒 Open Shop</button>
+<button onclick="openRules()" style="display:none; margin: 10px auto; display: block; max-width: 400px; padding: 12px; border-radius: 30px; background: rgba(255,255,255,0.1); color: blue; border: 1px solid rgba(255,255,255,0.3);" id="rulesButton">Rules</button>
 
 
-    <div id="shopContainer" style="display:none; border: 1px solid #ccc; padding: 10px; margin-top: 10px;">
-        <h3>Shop</h3>
-        <button class="btnshop" onclick="buyItem(1000, -5)">Buy: 1000 credits → -5 days</button><br>
-        <button onclick="buyItem(2000, -15)">Buy: 2000 credits → -15 days</button><br>
-        <button onclick="buyItem(4000, -25)">Buy: 4000 credits → -25 days</button><br>
-        <button onclick="buyItem(5000, -35)">Buy: 5000 credits → -35 days</button><br>
-        <button onclick="buyItem(6000, -45)">Buy: 6000 credits → -45 days</button><br><br>
-        <button onclick="buyItem(7000, -55)">Buy: 7000 credits → -55 days</button><br><br>
-        <button onclick="buyItem(8000, -65)">Buy: 8000 credits → -65 days</button><br><br>
-        <button onclick="buyItem(9000, -75)">Buy: 9000 credits → -75 days</button><br><br>
-        <button onclick="buyItem(10000, -85)">Buy: 10000 credits → -85 days</button><br><br>
-        <button onclick="buyItem(11000, -100)">Buy: 11000 credits → -100 days</button><br><br>
-        <button onclick="buyInfiniteCredits()">Buy: Infinite Credits (2.5s) → 16,000 credits</button><br><br>
-        <button onclick="closeShop()">Close Shop</button>
-    </div>
+<div id="shopContainer" style="display:none; border: 1px solid #ccc; padding: 10px; margin-top: 10px;">
+<h3>Shop</h3>
+<button class="btnshop" onclick="buyItem(1000, -5)">Buy: 1000 credits → -5 days</button><br>
+<button onclick="buyItem(2000, -15)">Buy: 2000 credits → -15 days</button><br>
+<button onclick="buyItem(4000, -25)">Buy: 4000 credits → -25 days</button><br>
+<button onclick="buyItem(5000, -35)">Buy: 5000 credits → -35 days</button><br>
+<button onclick="buyItem(6000, -45)">Buy: 6000 credits → -45 days</button><br><br>
+<button onclick="buyItem(7000, -55)">Buy: 7000 credits → -55 days</button><br><br>
+<button onclick="buyItem(8000, -65)">Buy: 8000 credits → -65 days</button><br><br>
+<button onclick="buyItem(9000, -75)">Buy: 9000 credits → -75 days</button><br><br>
+<button onclick="buyItem(10000, -85)">Buy: 10000 credits → -85 days</button><br><br>
+<button onclick="buyItem(11000, -100)">Buy: 11000 credits → -100 days</button><br><br>
+<button onclick="buyInfiniteCredits()">Buy: Infinite Credits (2.5s) → 16,000 credits</button><br><br>
+<button onclick="closeShop()">Close Shop</button>
+</div>
 
-    <form id="reportForm" style="display:none;" action="https://formsubmit.co/zezo_z4ever@outlook.com" method="post">
-        <input type="hidden" name="_captcha" value="false" />
-        <input type="hidden" name="_next" value="https://zezo20234.github.io/TA7ADY/" />
-        <label for="name">Name:</label>
-        <input type="text" id="name" name="name" placeholder="Enter your name" required />
-        <label for="report">Report:</label>
-        <textarea id="report" name="report" rows="2" placeholder="Your report here"></textarea>
-        <label for="reportWho">Report on who:</label>
-        <textarea id="reportWho" name="report_on_who" rows="2" placeholder="Name of who you report on"></textarea>
-        <label for="reportDetails">Report details:</label>
-        <textarea id="reportDetails" name="report_details" rows="3" placeholder="Explain what happened..."></textarea>
-        <label for="giveCredits">Give credits to:</label>
-        <textarea id="giveCredits" name="give_to_who_credits" rows="3" placeholder="Who should get credit?"></textarea>
-        <label for="file">put photo not needed sometimes</label>
-        <input type="file" id="file">
+<form id="reportForm" style="display:none;" action="https://formsubmit.co/zezo_z4ever@outlook.com" method="post">
+<input type="hidden" name="_captcha" value="false" />
+<input type="hidden" name="_next" value="https://zezo20234.github.io/TA7ADY/" />
+<label for="name">Name:</label>
+<input type="text" id="name" name="name" placeholder="Enter your name" required />
+<label for="report">Report:</label>
+<textarea id="report" name="report" rows="2" placeholder="Your report here"></textarea>
+<label for="reportWho">Report on who:</label>
+<textarea id="reportWho" name="report_on_who" rows="2" placeholder="Name of who you report on"></textarea>
+<label for="reportDetails">Report details:</label>
+<textarea id="reportDetails" name="report_details" rows="3" placeholder="Explain what happened..."></textarea>
+<label for="giveCredits">Give credits to:</label>
+<textarea id="giveCredits" name="give_to_who_credits" rows="3" placeholder="Who should get credit?"></textarea>
+<label for="file">put photo not needed sometimes</label>
+<input type="file" id="file">
 
-        <label for="credits">How many credits:</label>
-        <input type="number" id="credits" name="how_many_credits" step="100" min="100" max="5000" placeholder="Credits amount" />
-        <label for="rating">Rate this app:</label>
-        <div id="rating" style="display:flex; gap:10px; justify-content:center; margin-top: 5px;">
-            <label><input type="radio" name="rating" value="1" required />1⭐</label>
-            <label><input type="radio" name="rating" value="2" />2⭐</label>
-            <label><input type="radio" name="rating" value="3" />3⭐</label>
-            <label><input type="radio" name="rating" value="4" />4⭐</label>
-            <label><input type="radio" name="rating" value="5" />5⭐</label>
-        </div>
-        <input type="submit" class="glassBtn" value="SUBMIT" />
-        <button type="reset" id="resetButton">Reset</button>
-    </form>
+<label for="credits">How many credits:</label>
+<input type="number" id="credits" name="how_many_credits" step="100" min="100" max="5000" placeholder="Credits amount" />
+<label for="rating">Rate this app:</label>
+<div id="rating" style="display:flex; gap:10px; justify-content:center; margin-top: 5px;">
+<label><input type="radio" name="rating" value="1" required />1⭐</label>
+<label><input type="radio" name="rating" value="2" />2⭐</label>
+<label><input type="radio" name="rating" value="3" />3⭐</label>
+<label><input type="radio" name="rating" value="4" />4⭐</label>
+<label><input type="radio" name="rating" value="5" />5⭐</label>
+</div>
+<input type="submit" class="glassBtn" value="SUBMIT" />
+<button type="reset" id="resetButton">Reset</button>
+</form>
 
-    <div id="creditCodeBox" class="login-box" style="display:none;">
-        <h3>🎁 Credit Codes</h3>
-        <p>Create or redeem codes to manage credits.</p>
+<div id="creditCodeBox" class="login-box" style="display:none;">
+<h3>🎁 Credit Codes</h3>
+<p>Create or redeem codes to manage credits.</p>
 
-        <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.2); margin: 20px 0;">
+<hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.2); margin: 20px 0;">
 
-        <h4>Create a Code</h4>
-        <label for="createCodeAmount">Amount:</label>
-        <input type="number" id="createCodeAmount" placeholder="Enter amount to package in code" min="1" />
-        <button onclick="generateCreditCode()">Create Code</button>
-        <div id="qrcodeContainer"></div> <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.2); margin: 20px 0;">
+<h4>Create a Code</h4>
+<label for="createCodeAmount">Amount:</label>
+<input type="number" id="createCodeAmount" placeholder="Enter amount to package in code" min="1" />
+<button onclick="generateCreditCode()">Create Code</button>
+<div id="qrcodeContainer"></div> <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.2); margin: 20px 0;">
 
-        <h4>Redeem a Code</h4>
-        <button id="startScannerButton" onclick="startQrCodeScanner()">Scan QR Code</button>
-        <button id="stopScannerButton" onclick="stopQrCodeScanner()" style="display:none;">Stop Scanner</button>
-        <div id="qr-reader"></div> <input type="text" id="redeemCodeInput" placeholder="Or enter code manually" style="display:none;"/>
-        <button onclick="redeemCreditCode()" style="display:none;" id="redeemManualButton">Redeem Code</button>
-    </div>
+<h4>Redeem a Code</h4>
+<button id="startScannerButton" onclick="startQrCodeScanner()">Scan QR Code</button>
+<button id="stopScannerButton" onclick="stopQrCodeScanner()" style="display:none;">Stop Scanner</button>
+<div id="qr-reader"></div> <input type="text" id="redeemCodeInput" placeholder="Or enter code manually" style="display:none;"/>
+<button onclick="redeemCreditCode()" style="display:none;" id="redeemManualButton">Redeem Code</button>
+</div>
 
-    <div id="selfEditArea" class="login-box" style="display:none;">
-        <h3>🔒 Enter Secret Code</h3>
-        <input type="password" id="secretCodeInput" placeholder="Enter secret code" autocomplete="off" />
-        <button onclick="checkSecretCode()">Unlock Editor</button>
-    </div>
+<div id="selfEditArea" class="login-box" style="display:none;">
+<h3>🔒 Enter Secret Code</h3>
+<input type="password" id="secretCodeInput" placeholder="Enter secret code" autocomplete="off" />
+<button onclick="checkSecretCode()">Unlock Editor</button>
+</div>
 
-    <div id="selfEditor" class="login-box" style="display:none;">
-        <h3>Edit Your Own Account</h3>
-        <label for="selfCredits">Credits:</label>
-        <input type="number" id="selfCredits" placeholder="Update your credits" min="0" />
-        <label for="selfDays">Days:</label>
-        <input type="number" id="selfDays" placeholder="Update your days" min="0" />
+<div id="selfEditor" class="login-box" style="display:none;">
+<h3>Edit Your Own Account</h3>
+<label for="selfCredits">Credits:</label>
+<input type="number" id="selfCredits" placeholder="Update your credits" min="0" />
+<label for="selfDays">Days:</label>
+<input type="number" id="selfDays" placeholder="Update your days" min="0" />
 
-        <label for="challengeText">Challenge:</label>
-        <textarea id="challengeText" placeholder="Enter challenge here..." rows="2"></textarea>
+<label for="challengeText">Challenge:</label>
+<textarea id="challengeText" placeholder="Enter challenge here..." rows="2"></textarea>
 
-        <button onclick="saveSelfChanges()">Save My Changes</button>
-    </div>
+<button onclick="saveSelfChanges()">Save My Changes</button>
+</div>
 
-    <script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs/qrcode.min.js"></script>
-    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs/qrcode.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
-    <script type="module">
-        // Import modular Firebase SDK functions
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.4/firebase-app.js";
-        import { getDatabase, ref, get, set, onValue, update, remove } from "https://www.gstatic.com/firebasejs/9.6.4/firebase-database.js";
+<script type="module">
+// Import modular Firebase SDK functions
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.4/firebase-app.js";
+import { getDatabase, ref, get, set, onValue, update, remove } from "https://www.gstatic.com/firebasejs/9.6.4/firebase-database.js";
 
-        // Default users with passwords (you can add more)
-        const defaultUsers = {
-            asser: { password: "asser2025" },
-            layan: { password: "layan999" },
-            zezo: { password: "zezo2023" },
-            bank: { password: "bank" }  
-        };
+// Default users with passwords (you can add more)
+const defaultUsers = {
+asser: { password: "asser2025" },
+layan: { password: "layan999" },
+zezo: { password: "zezo2023" },
+bank: { password: "bank" }  
+};
 
-        // Firebase config
-        const firebaseConfig = {
-            apiKey: "AIzaSyAdmiUcQ_yZDL4Gg0r93HjqzPYQ6N-gzM8",
-            authDomain: "the-challenge-fa9b2.firebaseapp.com",
-            databaseURL: "https://the-challenge-fa9b2-default-rtdb.firebaseio.com",
-            projectId: "the-challenge-fa9b2",
-            storageBucket: "the-challenge-fa9b2.appspot.com",
-            messagingSenderId: "4102830619",
-            appId: "1:4102830619:web:581e033f36ec02708916be",
-            measurementId: "G-7M7JLK1V86"
-        };
+// Firebase config
+const firebaseConfig = {
+apiKey: "AIzaSyAdmiUcQ_yZDL4Gg0r93HjqzPYQ6N-gzM8",
+authDomain: "the-challenge-fa9b2.firebaseapp.com",
+databaseURL: "https://the-challenge-fa9b2-default-rtdb.firebaseio.com",
+projectId: "the-challenge-fa9b2",
+storageBucket: "the-challenge-fa9b2.appspot.com",
+messagingSenderId: "4102830619",
+appId: "1:4102830619:web:581e033f36ec02708916be",
+measurementId: "G-7M7JLK1V86"
+};
 
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const database = getDatabase(app);
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const database = getDatabase(app);
 
-        let currentUser = null;
-        let currentUserData = null;
-        let infiniteCreditsActive = false; // Flag to track infinite credits
+let currentUser = null;
+let currentUserData = null;
+let infiniteCreditsActive = false; // Flag to track infinite credits
 
-        // HTML5-QRCode instance
-        let html5QrCode = null;
+// HTML5-QRCode instance
+let html5QrCode = null;
 
-        // Login function (original, with password check)
-        window.checkLogin = function (usernameOverride = null) { // Added usernameOverride parameter
-            const user = usernameOverride || document.getElementById("username").value.trim();
-            const pass = document.getElementById("password").value.trim();
+// Login function (original, with password check)
+window.checkLogin = function (usernameOverride = null) { // Added usernameOverride parameter
+const user = usernameOverride || document.getElementById("username").value.trim();
+const pass = document.getElementById("password").value.trim();
 
-            if (!defaultUsers[user]) {
-                alert("User not found.");
-                return;
-            }
+if (!defaultUsers[user]) {
+alert("User not found.");
+return;
+}
 
-            // Only check password if not using quick access
-            if (!usernameOverride && defaultUsers[user].password !== pass) {
-                alert("Invalid password.");
-                return;
-            }
+// Only check password if not using quick access
+if (!usernameOverride && defaultUsers[user].password !== pass) {
+alert("Invalid password.");
+return;
+}
 
-            currentUser = user;
+currentUser = user;
 
-            // Keep me signed in
-            if (document.getElementById("keepSignedIn")?.checked) {
-                localStorage.setItem("savedUser", user);
-            }
+// Keep me signed in
+if (document.getElementById("keepSignedIn")?.checked) {
+localStorage.setItem("savedUser", user);
+}
 
-            const userRef = ref(database, "users/" + currentUser);
+const userRef = ref(database, "users/" + currentUser);
 
-            get(userRef)
-                .then((snapshot) => {
-                    if (snapshot.exists()) {
-                        currentUserData = snapshot.val();
-                    } else {
-                        currentUserData = { credits: 0, days: 0 };
-                        set(userRef, currentUserData);
-                    }
-                    showWelcome();
-                })
-                .catch((error) => {
-                    alert("Error reading data: " + error);
-                });
-        };
+get(userRef)
+.then((snapshot) => {
+    if (snapshot.exists()) {
+        currentUserData = snapshot.val();
+    } else {
+        currentUserData = { credits: 0, days: 0 };
+        set(userRef, currentUserData);
+    }
+    showWelcome();
+})
+.catch((error) => {
+    alert("Error reading data: " + error);
+});
+};
 
-        function showWelcome() {
-            const loginLockIcon = document.getElementById("loginLockIcon");
-            loginLockIcon.classList.add("open");
+function showWelcome() {
+const loginLockIcon = document.getElementById("loginLockIcon");
+loginLockIcon.classList.add("open");
+document.getElementById("creditChangeBox").style.display = "block";
 
-            setTimeout(() => {
-                document.getElementById("loginBox").style.display = "none";
-                document.getElementById("welcomeBox").style.display = "block";
-                animateWelcomeText(currentUser);
+setTimeout(() => {
+document.getElementById("loginBox").style.display = "none";
+document.getElementById("welcomeBox").style.display = "block";
+animateWelcomeText(currentUser);
 
-                document.getElementById("reportForm").style.display = "block";
-                document.querySelector('.btnshop').style.display = "block"; // Show shop open button
-                document.getElementById("rulesButton").style.display = "block"; // Show rules button
-                document.getElementById("openMoreButton").style.display = "block"; // Show open more button
+document.getElementById("reportForm").style.display = "block";
+document.querySelector('.btnshop').style.display = "block"; // Show shop open button
+document.getElementById("rulesButton").style.display = "block"; // Show rules button
+document.getElementById("openMoreButton").style.display = "block"; // Show open more button
 
-                document.getElementById("infoCredits").textContent = currentUserData.credits ?? 0;
-                document.getElementById("infoDays").textContent = currentUserData.days ?? 0;
-                document.getElementById("infoBox").style.display = "block";
-                document.getElementById("logoutButton").style.display = "block";
+document.getElementById("infoCredits").textContent = currentUserData.credits ?? 0;
+document.getElementById("infoDays").textContent = currentUserData.days ?? 0;
+document.getElementById("infoBox").style.display = "block";
+document.getElementById("logoutButton").style.display = "block";
 
-            }, 1000);
-        }
+}, 1000);
+}
 
-        // Secret code check for self edit unlock
-        window.checkSecretCode = function() {
-            const code = document.getElementById("secretCodeInput").value.trim();
-            if (code === "737") {
-                alert("Editor unlocked!");
-                document.getElementById("selfEditor").style.display = "block";
-                // Pre-fill current credits/days
-                document.getElementById("selfCredits").value = currentUserData.credits ?? 0;
-                document.getElementById("selfDays").value = currentUserData.days ?? 0;
+// Secret code check for self edit unlock
+window.checkSecretCode = function() {
+const code = document.getElementById("secretCodeInput").value.trim();
+if (code === "737") {
+alert("Editor unlocked!");
+document.getElementById("selfEditor").style.display = "block";
+// Pre-fill current credits/days
+document.getElementById("selfCredits").value = currentUserData.credits ?? 0;
+document.getElementById("selfDays").value = currentUserData.days ?? 0;
 
-                // Load existing challenge from Firebase into textarea
-                get(ref(database, 'global/challenge')).then(snapshot => {
-                    if (snapshot.exists()) {
-                        document.getElementById("challengeText").value = snapshot.val();
-                    } else {
-                        document.getElementById("challengeText").value = "";
-                    }
-                });
-            } else {
-                alert("Wrong secret code.");
-            }
-        };
+// Load existing challenge from Firebase into textarea
+get(ref(database, 'global/challenge')).then(snapshot => {
+    if (snapshot.exists()) {
+        document.getElementById("challengeText").value = snapshot.val();
+    } else {
+        document.getElementById("challengeText").value = "";
+    }
+});
+} else {
+alert("Wrong secret code.");
+}
+};
 
-        window.saveSelfChanges = function() {
-            const newCredits = parseInt(document.getElementById("selfCredits").value, 10);
-            const newDays = parseInt(document.getElementById("selfDays").value, 10);
-            const challenge = document.getElementById("challengeText").value.trim();
+window.saveSelfChanges = function() {
+const newCredits = parseInt(document.getElementById("selfCredits").value, 10);
+const newDays = parseInt(document.getElementById("selfDays").value, 10);
+const challenge = document.getElementById("challengeText").value.trim();
 
-            if (isNaN(newCredits) || isNaN(newDays)) {
-                alert("Please enter valid numbers.");
-                return;
-            }
+if (isNaN(newCredits) || isNaN(newDays)) {
+alert("Please enter valid numbers.");
+return;
+}
 
-            const userRef = ref(database, 'users/' + currentUser);
+const userRef = ref(database, 'users/' + currentUser);
 
-            update(userRef, { credits: newCredits, days: newDays }).then(() => {
-                alert("Changes saved.");
-                currentUserData.credits = newCredits;
-                currentUserData.days = newDays;
-                document.getElementById("infoCredits").textContent = newCredits;
-                document.getElementById("infoDays").textContent = newDays;
-            }).catch(err => {
-                alert("Error saving data: " + err);
-            });
+update(userRef, { credits: newCredits, days: newDays }).then(() => {
+alert("Changes saved.");
+currentUserData.credits = newCredits;
+currentUserData.days = newDays;
+document.getElementById("infoCredits").textContent = newCredits;
+document.getElementById("infoDays").textContent = newDays;
+}).catch(err => {
+alert("Error saving data: " + err);
+});
 
-            if (challenge) {
-                set(ref(database, 'global/challenge'), challenge).catch(err => {
-                    alert("Error saving challenge: " + err);
-                });
-            }
-        };
+if (challenge) {
+set(ref(database, 'global/challenge'), challenge).catch(err => {
+    alert("Error saving challenge: " + err);
+});
+}
+};
 
-        // Listen to challenge updates to update footer live
-        onValue(ref(database, 'global/challenge'), snapshot => {
-            const val = snapshot.exists() ? snapshot.val() : "No challenge set.";
-            // Check if the infoChallenge element exists before setting its content
-            const infoChallenge = document.getElementById("infoChallenge");
-            if (infoChallenge) {
-                infoChallenge.textContent = "Challenge: " + val;
-            }
+// Listen to challenge updates to update footer live
+onValue(ref(database, 'global/challenge'), snapshot => {
+const val = snapshot.exists() ? snapshot.val() : "No challenge set.";
+// Check if the infoChallenge element exists before setting its content
+const infoChallenge = document.getElementById("infoChallenge");
+if (infoChallenge) {
+infoChallenge.textContent = "Challenge: " + val;
+}
+});
+
+function animateWelcomeText(name) {
+const welcomeMessage = document.getElementById("welcomeMessage");
+const userWelcome = document.getElementById("userWelcome");
+
+welcomeMessage.innerHTML = "";
+userWelcome.innerHTML = "";
+
+const message = "Welcome back, ";
+const delay = 0.12; // slower animation
+
+message.split("").forEach((char, i) => {
+const span = document.createElement("span");
+span.textContent = char;
+span.className = "letter";
+span.style.animationDelay = `${i * delay}s`;
+welcomeMessage.appendChild(span);
+});
+
+name.split("").forEach((char, j) => {
+const span = document.createElement("span");
+span.textContent = char;
+span.className = "letter";
+span.style.animationDelay = `${(message.length + j) * delay}s`;
+userWelcome.appendChild(span);
+});
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+const savedUser = localStorage.getItem("savedUser");
+if (savedUser && defaultUsers[savedUser]) {
+currentUser = savedUser;
+const userRef = ref(database, 'users/' + currentUser);
+
+get(userRef).then(snapshot => {
+    if (snapshot.exists()) {
+        currentUserData = snapshot.val();
+    } else {
+        currentUserData = { credits: 0, days: 0 };
+        set(userRef, currentUserData);
+    }
+    showWelcome();
+}).catch(error => {
+    alert("Auto-login error: " + error);
+});
+}
+});
+
+window.logout = function () {
+localStorage.removeItem("savedUser");
+currentUser = null;
+currentUserData = null;
+
+document.getElementById("username").value = "";
+document.getElementById("password").value = "";
+document.getElementById("loginBox").style.display = "block";
+document.getElementById("welcomeBox").style.display = "none";
+document.getElementById("reportForm").style.display = "none";
+document.getElementById("selfEditArea").style.display = "none"; // Hide on logout
+document.getElementById("selfEditor").style.display = "none";
+document.getElementById("infoBox").style.display = "none";
+document.getElementById("logoutButton").style.display = "none";
+document.getElementById("shopContainer").style.display = "none"; // Keep shop hidden on logout
+document.getElementById("creditCodeBox").style.display = "none"; // Hide on logout
+document.querySelector('.btnshop').style.display = "none"; // Hide shop open button
+document.getElementById("rulesButton").style.display = "none"; // Hide rules button
+document.getElementById("openMoreButton").style.display = "none"; // Hide open more button
+
+document.getElementById("quickAccessCodeInput").value = "";
+document.getElementById("quickUserList").style.display = "none";
+
+// Clear the QR code on logout
+document.getElementById("qrcodeContainer").innerHTML = '';
+document.getElementById("qrcodeContainer").style.display = 'none';
+
+// Hide scanner elements
+document.getElementById("qr-reader").style.display = 'none';
+document.getElementById("startScannerButton").style.display = 'block';
+document.getElementById("stopScannerButton").style.display = 'none';
+document.getElementById("redeemCodeInput").style.display = 'none';
+document.getElementById("redeemManualButton").style.display = 'none';
+if (html5QrCode && html5QrCode.isScanning) {
+html5QrCode.stop().catch(err => console.error("Error stopping scanner on logout:", err));
+}
+
+
+alert("You have been logged out.");
+};
+
+window.openShop = function () {
+document.getElementById("shopContainer").style.display = "block";
+};
+
+window.closeShop = function () {
+document.getElementById("shopContainer").style.display = "none";
+};
+
+// NEW function for "Open More" button
+window.openMoreOptions = function() {
+document.getElementById("creditCodeBox").style.display = "block";
+document.getElementById("selfEditArea").style.display = "block";
+};
+
+window.buyItem = function (creditsCost, daysChange) {
+if (!currentUserData) {
+alert("You must be logged in.");
+return;
+}
+
+if (infiniteCreditsActive) {
+const newDays = (currentUserData.days ?? 0) + daysChange;
+const userRef = ref(database, "users/" + currentUser);
+update(userRef, { days: newDays }).then(() => {
+    currentUserData.days = newDays;
+    document.getElementById("infoDays").textContent = newDays;
+    alert("Purchase successful with infinite credits!");
+}).catch(err => {
+    alert("Error updating data: " + err);
+});
+return;
+}
+
+if (currentUserData.credits < creditsCost) {
+alert("Not enough credits.");
+return;
+}
+
+const newCredits = currentUserData.credits - creditsCost;
+const newDays = (currentUserData.days ?? 0) + daysChange;
+
+const userRef = ref(database, "users/" + currentUser);
+
+update(userRef, {
+credits: newCredits,
+days: newDays
+}).then(() => {
+currentUserData.credits = newCredits;
+currentUserData.days = newDays;
+document.getElementById("infoCredits").textContent = newCredits;
+document.getElementById("infoDays").textContent = newDays;
+alert("Purchase successful!");
+}).catch(err => {
+alert("Error updating data: " + err);
+});
+};
+
+window.checkQuickAccessCode = function() {
+const code = document.getElementById("quickAccessCodeInput").value.trim();
+if (code === "737") {
+document.getElementById("quickUserList").style.display = "block";
+document.getElementById("quickAccessCodeInput").style.display = "none";
+document.getElementById("quickAccessCodeInput").nextElementSibling.style.display = "none";
+} else {
+alert("Incorrect Quick Access Code!");
+}
+};
+
+window.quickLoginUser = function(user) {
+window.checkLogin(user);
+};
+
+window.buyInfiniteCredits = function() {
+const creditsCost = 16000;
+if (!currentUserData) {
+alert("You must be logged in to buy this.");
+return;
+}
+
+if (currentUserData.credits < creditsCost) {
+alert("You need " + creditsCost + " credits to buy Infinite Credits!");
+return;
+}
+
+const newCredits = currentUserData.credits - creditsCost;
+const userRef = ref(database, "users/" + currentUser);
+
+update(userRef, { credits: newCredits }).then(() => {
+currentUserData.credits = newCredits;
+document.getElementById("infoCredits").textContent = newCredits;
+alert("Infinite Credits activated for 2.5 seconds!");
+
+infiniteCreditsActive = true;
+setTimeout(() => {
+    infiniteCreditsActive = false;
+    alert("Infinite Credits deactivated.");
+}, 2500); // 2.5 seconds
+}).catch(err => {
+alert("Error purchasing Infinite Credits: " + err);
+});
+};
+
+// --- QR Code Generation Function ---
+function generateQRCode(text) {
+const qrcodeContainer = document.getElementById("qrcodeContainer");
+qrcodeContainer.innerHTML = ""; // Clear any existing QR code
+// Show the QR code container
+qrcodeContainer.style.display = 'block';
+
+// Create a new QRCode instance
+new QRCode(qrcodeContainer, {
+text: text,
+width: 150, // Slightly larger for better scanning
+height: 150,
+colorDark : "#0000FF", // Changed to blue for QR code dots
+colorLight : "#FFFFFF",
+correctLevel : QRCode.CorrectLevel.H
+});
+}
+
+// --- Credit Code Generation ---
+window.generateCreditCode = function() {
+const amountToCode = parseInt(document.getElementById("createCodeAmount").value, 10);
+
+if (!currentUser) {
+alert("You must be logged in.");
+return;
+}
+if (!amountToCode || amountToCode <= 0) {
+alert("Please enter a valid, positive amount.");
+return;
+}
+if (currentUserData.credits < amountToCode) {
+alert("You don't have enough credits to create this code.");
+return;
+}
+
+// Generate a 5-digit numeric code
+const newCode = String(Math.floor(Math.random() * 100000)).padStart(5, '0');
+
+// Define the data for the new code
+const codeData = {
+amount: amountToCode,
+createdBy: currentUser,
+createdAt: Date.now(),
+expiresAt: Date.now() + (24 * 60 * 60 * 1000) // Expires in 24 hours
+};
+
+const senderNewCredits = currentUserData.credits - amountToCode;
+
+// Use atomic update to deduct credits and create the code simultaneously
+const updates = {};
+updates['/users/' + currentUser + '/credits'] = senderNewCredits;
+updates['/creditCodes/' + newCode] = codeData;
+
+update(ref(database), updates).then(() => {
+// Update UI
+currentUserData.credits = senderNewCredits;
+document.getElementById("infoCredits").textContent = senderNewCredits;
+document.getElementById("createCodeAmount").value = ''; // Clear the input field
+
+alert(`QR Code generated for ${amountToCode} credits!`);
+
+// --- Generate QR Code for the newCode ---
+generateQRCode(newCode);
+
+}).catch(error => {
+console.error("Error creating credit code:", error);
+alert("Error creating credit code. Please try again.");
+});
+};
+
+// --- Credit Code Redemption (modified to accept scanned code) ---
+window.redeemCreditCode = async function(codeToRedeemParam = null) { // Added parameter
+const codeToRedeem = codeToRedeemParam || document.getElementById("redeemCodeInput").value.trim();
+
+if (!currentUser) {
+alert("You must be logged in to redeem a code.");
+return;
+}
+if (!codeToRedeem) {
+alert("Please enter a code or scan a QR code.");
+return;
+}
+
+const codeRef = ref(database, 'creditCodes/' + codeToRedeem);
+
+try {
+const snapshot = await get(codeRef);
+if (!snapshot.exists()) {
+    alert("Invalid or expired credit code.");
+    return;
+}
+
+const codeData = snapshot.val();
+if (codeData.expiresAt && Date.now() > codeData.expiresAt) {
+    alert("This credit code has expired.");
+    // Optionally remove expired code from Firebase
+    remove(codeRef);
+    return;
+}
+
+const creditsToAdd = codeData.amount;
+const newCredits = (currentUserData.credits ?? 0) + creditsToAdd;
+
+// Use atomic update for the current user's credits and to delete the code
+const updates = {};
+updates['/users/' + currentUser + '/credits'] = newCredits;
+updates['/creditCodes/' + codeToRedeem] = null; // Delete the code after redemption
+
+await update(ref(database), updates);
+
+currentUserData.credits = newCredits;
+document.getElementById("infoCredits").textContent = newCredits;
+document.getElementById("redeemCodeInput").value = ''; // Clear input field
+
+alert(`Successfully redeemed ${creditsToAdd} credits! Your new balance is ${newCredits}.`);
+
+} catch (error) {
+console.error("Error redeeming credit code:", error);
+alert("Error redeeming credit code. Please try again.");
+}
+};
+
+// --- QR Code Scanner Functions ---
+window.startQrCodeScanner = function() {
+if (!html5QrCode) {
+html5QrCode = new Html5Qrcode("qr-reader");
+}
+
+const qrReaderDiv = document.getElementById('qr-reader');
+qrReaderDiv.style.display = 'block';
+document.getElementById('startScannerButton').style.display = 'none';
+document.getElementById('stopScannerButton').style.display = 'block';
+document.getElementById('redeemCodeInput').style.display = 'block'; // Show manual input as well
+document.getElementById('redeemManualButton').style.display = 'block';
+
+html5QrCode.start(
+{ facingMode: "environment" }, // Prefer back camera
+{
+    fps: 10,    // frames per second
+    qrbox: { width: 250, height: 250 }  // confine QR box to 250x250
+},
+(decodedText, decodedResult) => {
+    // console.log(`QR Code detected: ${decodedText}`);
+    if (decodedText) {
+        html5QrCode.stop().then(() => {
+            // console.log("QR Code scanner stopped.");
+            document.getElementById('qr-reader').style.display = 'none';
+            document.getElementById('stopScannerButton').style.display = 'none';
+            window.redeemCreditCode(decodedText); // Redeem the scanned code
+        }).catch(err => {
+            console.error("Error stopping scanner:", err);
         });
+    }
+},
+(errorMessage) => {
+    // console.warn(`QR Code scanning error: ${errorMessage}`);
+}
+).catch((err) => {
+console.error(`Unable to start QR Code scanner: ${err}`);
+alert("Error starting QR scanner. Please ensure camera access is granted.");
+document.getElementById('qr-reader').style.display = 'none';
+document.getElementById('startScannerButton').style.display = 'block';
+document.getElementById('stopScannerButton').style.display = 'none';
+});
+};
 
-        function animateWelcomeText(name) {
-            const welcomeMessage = document.getElementById("welcomeMessage");
-            const userWelcome = document.getElementById("userWelcome");
+window.stopQrCodeScanner = function() {
+if (html5QrCode && html5QrCode.isScanning) {
+html5QrCode.stop().then(() => {
+    // console.log("QR Code scanner stopped.");
+    document.getElementById('qr-reader').style.display = 'none';
+    document.getElementById('startScannerButton').style.display = 'block';
+    document.getElementById('stopScannerButton').style.display = 'none';
+    document.getElementById('redeemCodeInput').style.display = 'block';
+    document.getElementById('redeemManualButton').style.display = 'block';
+}).catch(err => {
+    console.error("Error stopping scanner:", err);
+});
+}
+};
 
-            welcomeMessage.innerHTML = "";
-            userWelcome.innerHTML = "";
+window.startChangeCredits = async function() {
+    const input = document.getElementById("creditChangeInput").value.trim();
+    if (!input.match(/^[+-]\d+$/)) {
+        alert("Please enter amount like +500 or -500");
+        return;
+    }
+    const amount = parseInt(input, 10);
+    if (isNaN(amount)) {
+        alert("Invalid amount.");
+        return;
+    }
 
-            const message = "Welcome back, ";
-            const delay = 0.12; // slower animation
+    // Start QR scanner
+    if (!html5QrCode) {
+        html5QrCode = new Html5Qrcode("qr-reader");
+    }
 
-            message.split("").forEach((char, i) => {
-                const span = document.createElement("span");
-                span.textContent = char;
-                span.className = "letter";
-                span.style.animationDelay = `${i * delay}s`;
-                welcomeMessage.appendChild(span);
-            });
+    document.getElementById('qr-reader').style.display = 'block';
+    document.getElementById('startScannerButton').style.display = 'none';
+    document.getElementById('stopScannerButton').style.display = 'block';
 
-            name.split("").forEach((char, j) => {
-                const span = document.createElement("span");
-                span.textContent = char;
-                span.className = "letter";
-                span.style.animationDelay = `${(message.length + j) * delay}s`;
-                userWelcome.appendChild(span);
-            });
-        }
-
-        window.addEventListener('DOMContentLoaded', () => {
-            const savedUser = localStorage.getItem("savedUser");
-            if (savedUser && defaultUsers[savedUser]) {
-                currentUser = savedUser;
-                const userRef = ref(database, 'users/' + currentUser);
-
-                get(userRef).then(snapshot => {
-                    if (snapshot.exists()) {
-                        currentUserData = snapshot.val();
-                    } else {
-                        currentUserData = { credits: 0, days: 0 };
-                        set(userRef, currentUserData);
-                    }
-                    showWelcome();
-                }).catch(error => {
-                    alert("Auto-login error: " + error);
-                });
-            }
-        });
-
-        window.logout = function () {
-            localStorage.removeItem("savedUser");
-            currentUser = null;
-            currentUserData = null;
-
-            document.getElementById("username").value = "";
-            document.getElementById("password").value = "";
-            document.getElementById("loginBox").style.display = "block";
-            document.getElementById("welcomeBox").style.display = "none";
-            document.getElementById("reportForm").style.display = "none";
-            document.getElementById("selfEditArea").style.display = "none"; // Hide on logout
-            document.getElementById("selfEditor").style.display = "none";
-            document.getElementById("infoBox").style.display = "none";
-            document.getElementById("logoutButton").style.display = "none";
-            document.getElementById("shopContainer").style.display = "none"; // Keep shop hidden on logout
-            document.getElementById("creditCodeBox").style.display = "none"; // Hide on logout
-            document.querySelector('.btnshop').style.display = "none"; // Hide shop open button
-            document.getElementById("rulesButton").style.display = "none"; // Hide rules button
-            document.getElementById("openMoreButton").style.display = "none"; // Hide open more button
-
-            document.getElementById("quickAccessCodeInput").value = "";
-            document.getElementById("quickUserList").style.display = "none";
-
-            // Clear the QR code on logout
-            document.getElementById("qrcodeContainer").innerHTML = '';
-            document.getElementById("qrcodeContainer").style.display = 'none';
-
-            // Hide scanner elements
-            document.getElementById("qr-reader").style.display = 'none';
-            document.getElementById("startScannerButton").style.display = 'block';
-            document.getElementById("stopScannerButton").style.display = 'none';
-            document.getElementById("redeemCodeInput").style.display = 'none';
-            document.getElementById("redeemManualButton").style.display = 'none';
-            if (html5QrCode && html5QrCode.isScanning) {
-                html5QrCode.stop().catch(err => console.error("Error stopping scanner on logout:", err));
-            }
-
-
-            alert("You have been logged out.");
-        };
-
-        window.openShop = function () {
-            document.getElementById("shopContainer").style.display = "block";
-        };
-
-        window.closeShop = function () {
-            document.getElementById("shopContainer").style.display = "none";
-        };
-
-        // NEW function for "Open More" button
-        window.openMoreOptions = function() {
-            document.getElementById("creditCodeBox").style.display = "block";
-            document.getElementById("selfEditArea").style.display = "block";
-        };
-
-        window.buyItem = function (creditsCost, daysChange) {
-            if (!currentUserData) {
-                alert("You must be logged in.");
-                return;
-            }
-
-            if (infiniteCreditsActive) {
-                const newDays = (currentUserData.days ?? 0) + daysChange;
-                const userRef = ref(database, "users/" + currentUser);
-                update(userRef, { days: newDays }).then(() => {
-                    currentUserData.days = newDays;
-                    document.getElementById("infoDays").textContent = newDays;
-                    alert("Purchase successful with infinite credits!");
-                }).catch(err => {
-                    alert("Error updating data: " + err);
-                });
-                return;
-            }
-
-            if (currentUserData.credits < creditsCost) {
-                alert("Not enough credits.");
-                return;
-            }
-
-            const newCredits = currentUserData.credits - creditsCost;
-            const newDays = (currentUserData.days ?? 0) + daysChange;
-
-            const userRef = ref(database, "users/" + currentUser);
-
-            update(userRef, {
-                credits: newCredits,
-                days: newDays
-            }).then(() => {
-                currentUserData.credits = newCredits;
-                currentUserData.days = newDays;
-                document.getElementById("infoCredits").textContent = newCredits;
-                document.getElementById("infoDays").textContent = newDays;
-                alert("Purchase successful!");
-            }).catch(err => {
-                alert("Error updating data: " + err);
-            });
-        };
-
-        window.checkQuickAccessCode = function() {
-            const code = document.getElementById("quickAccessCodeInput").value.trim();
-            if (code === "737") {
-                document.getElementById("quickUserList").style.display = "block";
-                document.getElementById("quickAccessCodeInput").style.display = "none";
-                document.getElementById("quickAccessCodeInput").nextElementSibling.style.display = "none";
-            } else {
-                alert("Incorrect Quick Access Code!");
-            }
-        };
-
-        window.quickLoginUser = function(user) {
-            window.checkLogin(user);
-        };
-
-        window.buyInfiniteCredits = function() {
-            const creditsCost = 16000;
-            if (!currentUserData) {
-                alert("You must be logged in to buy this.");
-                return;
-            }
-
-            if (currentUserData.credits < creditsCost) {
-                alert("You need " + creditsCost + " credits to buy Infinite Credits!");
-                return;
-                }
-
-            const newCredits = currentUserData.credits - creditsCost;
-            const userRef = ref(database, "users/" + currentUser);
-
-            update(userRef, { credits: newCredits }).then(() => {
-                currentUserData.credits = newCredits;
-                document.getElementById("infoCredits").textContent = newCredits;
-                alert("Infinite Credits activated for 2.5 seconds!");
-
-                infiniteCreditsActive = true;
-                setTimeout(() => {
-                    infiniteCreditsActive = false;
-                    alert("Infinite Credits deactivated.");
-                }, 2500); // 2.5 seconds
-            }).catch(err => {
-                alert("Error purchasing Infinite Credits: " + err);
-            });
-        };
-
-        // --- QR Code Generation Function ---
-        function generateQRCode(text) {
-            const qrcodeContainer = document.getElementById("qrcodeContainer");
-            qrcodeContainer.innerHTML = ""; // Clear any existing QR code
-            // Show the QR code container
-            qrcodeContainer.style.display = 'block';
-
-            // Create a new QRCode instance
-            new QRCode(qrcodeContainer, {
-                text: text,
-                width: 150, // Slightly larger for better scanning
-                height: 150,
-                colorDark : "#0000FF", // Changed to blue for QR code dots
-                colorLight : "#FFFFFF",
-                correctLevel : QRCode.CorrectLevel.H
-            });
-        }
-
-        // --- Credit Code Generation ---
-        window.generateCreditCode = function() {
-            const amountToCode = parseInt(document.getElementById("createCodeAmount").value, 10);
-
-            if (!currentUser) {
-                alert("You must be logged in.");
-                return;
-            }
-            if (!amountToCode || amountToCode <= 0) {
-                alert("Please enter a valid, positive amount.");
-                return;
-            }
-            if (currentUserData.credits < amountToCode) {
-                alert("You don't have enough credits to create this code.");
-                return;
-            }
-
-            // Generate a 5-digit numeric code
-            const newCode = String(Math.floor(Math.random() * 100000)).padStart(5, '0');
-
-            // Define the data for the new code
-            const codeData = {
-                amount: amountToCode,
-                createdBy: currentUser,
-                createdAt: Date.now(),
-                expiresAt: Date.now() + (24 * 60 * 60 * 1000) // Expires in 24 hours
-            };
-
-            const senderNewCredits = currentUserData.credits - amountToCode;
-
-            // Use atomic update to deduct credits and create the code simultaneously
-            const updates = {};
-            updates['/users/' + currentUser + '/credits'] = senderNewCredits;
-            updates['/creditCodes/' + newCode] = codeData;
-
-            update(ref(database), updates).then(() => {
-                // Update UI
-                currentUserData.credits = senderNewCredits;
-                document.getElementById("infoCredits").textContent = senderNewCredits;
-                document.getElementById("createCodeAmount").value = ''; // Clear the input field
-
-                alert(`QR Code generated for ${amountToCode} credits!`);
-
-                // --- Generate QR Code for the newCode ---
-                generateQRCode(newCode);
-
-            }).catch(error => {
-                console.error("Error creating credit code:", error);
-                alert("Error creating credit code. Please try again.");
-            });
-        };
-
-        // --- Credit Code Redemption (modified to accept scanned code) ---
-        window.redeemCreditCode = async function(codeToRedeemParam = null) { // Added parameter
-            const codeToRedeem = codeToRedeemParam || document.getElementById("redeemCodeInput").value.trim();
-
-            if (!currentUser) {
-                alert("You must be logged in to redeem a code.");
-                return;
-            }
-            if (!codeToRedeem) {
-                alert("Please enter a code or scan a QR code.");
-                return;
-            }
-
-            const codeRef = ref(database, 'creditCodes/' + codeToRedeem);
-
+    html5QrCode.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        async (scannedCode, decodedResult) => {
             try {
-                const snapshot = await get(codeRef);
-                if (!snapshot.exists()) {
-                    alert("Invalid or expired credit code.");
-                    return;
-                }
-
-                const codeData = snapshot.val();
-                if (codeData.expiresAt && Date.now() > codeData.expiresAt) {
-                    alert("This credit code has expired.");
-                    // Optionally remove expired code from Firebase
-                    remove(codeRef);
-                    return;
-                }
-
-                const creditsToAdd = codeData.amount;
-                const newCredits = (currentUserData.credits ?? 0) + creditsToAdd;
-
-                // Use atomic update for the current user's credits and to delete the code
-                const updates = {};
-                updates['/users/' + currentUser + '/credits'] = newCredits;
-                updates['/creditCodes/' + codeToRedeem] = null; // Delete the code after redemption
-
-                await update(ref(database), updates);
-
-                currentUserData.credits = newCredits;
-                document.getElementById("infoCredits").textContent = newCredits;
-                document.getElementById("redeemCodeInput").value = ''; // Clear input field
-
-                alert(`Successfully redeemed ${creditsToAdd} credits! Your new balance is ${newCredits}.`);
-
-            } catch (error) {
-                console.error("Error redeeming credit code:", error);
-                alert("Error redeeming credit code. Please try again.");
-            }
-        };
-
-        // --- QR Code Scanner Functions ---
-        window.startQrCodeScanner = function() {
-            if (!html5QrCode) {
-                html5QrCode = new Html5Qrcode("qr-reader");
-            }
-
-            const qrReaderDiv = document.getElementById('qr-reader');
-            qrReaderDiv.style.display = 'block';
-            document.getElementById('startScannerButton').style.display = 'none';
-            document.getElementById('stopScannerButton').style.display = 'block';
-            document.getElementById('redeemCodeInput').style.display = 'block'; // Show manual input as well
-            document.getElementById('redeemManualButton').style.display = 'block';
-
-            html5QrCode.start(
-                { facingMode: "environment" }, // Prefer back camera
-                {
-                    fps: 10,    // frames per second
-                    qrbox: { width: 250, height: 250 }  // confine QR box to 250x250
-                },
-                (decodedText, decodedResult) => {
-                    // console.log(`QR Code detected: ${decodedText}`);
-                    if (decodedText) {
-                        html5QrCode.stop().then(() => {
-                            // console.log("QR Code scanner stopped.");
-                            document.getElementById('qr-reader').style.display = 'none';
-                            document.getElementById('stopScannerButton').style.display = 'none';
-                            window.redeemCreditCode(decodedText); // Redeem the scanned code
-                        }).catch(err => {
-                            console.error("Error stopping scanner:", err);
-                        });
-                    }
-                },
-                (errorMessage) => {
-                    // console.warn(`QR Code scanning error: ${errorMessage}`);
-                }
-            ).catch((err) => {
-                console.error(`Unable to start QR Code scanner: ${err}`);
-                alert("Error starting QR scanner. Please ensure camera access is granted.");
+                // Stop scanner after scanning
+                await html5QrCode.stop();
                 document.getElementById('qr-reader').style.display = 'none';
-                document.getElementById('startScannerButton').style.display = 'block';
                 document.getElementById('stopScannerButton').style.display = 'none';
-            });
-        };
+                
+                // Find user by code
+                const usersRef = ref(database, "users");
+                const snapshot = await get(usersRef);
+                if (!snapshot.exists()) {
+                    alert("No users found.");
+                    return;
+                }
 
-        window.stopQrCodeScanner = function() {
-            if (html5QrCode && html5QrCode.isScanning) {
-                html5QrCode.stop().then(() => {
-                    // console.log("QR Code scanner stopped.");
-                    document.getElementById('qr-reader').style.display = 'none';
-                    document.getElementById('startScannerButton').style.display = 'block';
-                    document.getElementById('stopScannerButton').style.display = 'none';
-                    document.getElementById('redeemCodeInput').style.display = 'block';
-                    document.getElementById('redeemManualButton').style.display = 'block';
-                }).catch(err => {
-                    console.error("Error stopping scanner:", err);
+                let foundUser = null;
+                snapshot.forEach(childSnap => {
+                    if (childSnap.val().code === scannedCode) {
+                        foundUser = { key: childSnap.key, data: childSnap.val() };
+                    }
                 });
+
+                if (!foundUser) {
+                    alert("User with this code not found.");
+                    return;
+                }
+
+                const newCredits = (foundUser.data.credits ?? 0) + amount;
+                await update(ref(database, "users/" + foundUser.key), { credits: newCredits });
+                alert(`User ${foundUser.key} now has ${newCredits} credits.`);
+            } catch (err) {
+                console.error("Error:", err);
+                alert("Error changing credits: " + err);
             }
-        };
+        },
+        (errorMessage) => {
+            console.warn("QR scan error:", errorMessage);
+        }
+    ).catch(err => {
+        console.error("Cannot start scanner:", err);
+        alert("Cannot start scanner: " + err);
+    });
+};
 
-    </script>
 
-    <script>
+</script>
+
+<script>
 // Function to decrease days by 1 at midnight if user has days > 0
 function setupDailyDaysDecrement() {
-  const now = new Date();
-  const millisTillMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0, 0) - now;
+const now = new Date();
+const millisTillMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0, 0) - now;
 
-  setTimeout(function() {
-    decrementDays();
+setTimeout(function() {
+decrementDays();
 
-    // Then set interval to run every 24h afterwards
-    setInterval(decrementDays, 24 * 60 * 60 * 1000);
-  }, millisTillMidnight);
+// Then set interval to run every 24h afterwards
+setInterval(decrementDays, 24 * 60 * 60 * 1000);
+}, millisTillMidnight);
 }
 
 function decrementDays() {
-  if (currentUserData && currentUserData.days > 0) {
-    const userRef = ref(database, 'users/' + currentUser);
-    const newDays = currentUserData.days - 1;
+if (currentUserData && currentUserData.days > 0) {
+const userRef = ref(database, 'users/' + currentUser);
+const newDays = currentUserData.days - 1;
 
-    update(userRef, { days: newDays }).then(() => {
-      currentUserData.days = newDays;
-      document.getElementById("infoDays").textContent = newDays;
-      console.log("Days decremented by 1 at midnight.");
-    }).catch(err => {
-      console.error("Error decrementing days:", err);
-    });
-  }
+update(userRef, { days: newDays }).then(() => {
+currentUserData.days = newDays;
+document.getElementById("infoDays").textContent = newDays;
+console.log("Days decremented by 1 at midnight.");
+}).catch(err => {
+console.error("Error decrementing days:", err);
+});
+}
 }
 
 // Call this function after login and data loaded
@@ -907,123 +977,16 @@ setupDailyDaysDecrement();
 <script>
 // Function to open the rules page
 function openRules() {
-  window.open('rules.html', '_blank'); // Opens 'rules.html' in a new tab/window
+window.open('rules.html', '_blank'); // Opens 'rules.html' in a new tab/window
 }
 
 </script>
 <button onclick="openMoreOptions()" style="display:none; margin: 10px auto; display: block; max-width: 400px; padding: 12px; border-radius: 30px; background: rgba(255,255,255,0.1); color: blue; border: 1px solid rgba(255,255,255,0.3);" id="openMoreButton">Open More</button>
-</body>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>QR Code Credits System</title>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-  <script src="https://unpkg.com/html5-qrcode@2.2.1/html5-qrcode.min.js"></script>
-  <style>
-    #reader { width: 300px; margin-top: 20px; display: none; }
-    #userInfo { margin-top: 20px; display: none; }
-    #creditInput { width: 200px; font-size: 16px; }
-  </style>
-</head>
-<body>
-
-  <h2>Enter Credit Amount</h2>
-  <input type="number" id="creditInput" placeholder="Enter amount (+ or -)" />
-  <button id="startScanBtn">Confirm & Start Scan</button>
-
-  <div id="reader"></div>
-
-  <div id="userInfo">
-    <h3 id="username"></h3>
-    <p>Credits: <span id="credits">0</span></p>
-  </div>
-
-  <audio id="beepSound" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg" preload="auto"></audio>
-
-  <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      // Firebase config and init
-      const firebaseConfig = {
-        apiKey: "AIzaSyAdmiUcQ_yZDL4Gg0r93HjqzPYQ6N-gzM8",
-        authDomain: "the-challenge-fa9b2.firebaseapp.com",
-        databaseURL: "https://the-challenge-fa9b2-default-rtdb.firebaseio.com",
-        projectId: "the-challenge-fa9b2",
-        storageBucket: "the-challenge-fa9b2.appspot.com",
-        messagingSenderId: "4102830619",
-        appId: "1:4102830619:web:581e033f36ec02708916be",
-        measurementId: "G-7M7JLK1V86"
-      };
-
-      firebase.initializeApp(firebaseConfig);
-      const db = firebase.database();
-
-      let qrScanner = null;
-      let scanning = false;
-
-      document.getElementById('startScanBtn').addEventListener('click', () => {
-        const amountInput = document.getElementById('creditInput').value.trim();
-        if (amountInput === '' || isNaN(parseInt(amountInput))) {
-          alert("Please enter a valid amount before starting the scan.");
-          return;
-        }
-        if (scanning) return; // prevent multiple starts
-        scanning = true;
-
-        document.getElementById('reader').style.display = 'block';
-        document.getElementById('userInfo').style.display = 'none';
-
-        qrScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
-
-        qrScanner.render(onScanSuccess);
-      });
-
-      function onScanSuccess(decodedText) {
-        if (!scanning) return;
-
-        scanning = false;
-        qrScanner.clear().then(() => {
-          document.getElementById('reader').style.display = 'none';
-        }).catch(err => {
-          console.error("Failed to clear scanner", err);
-        });
-
-        const beep = document.getElementById('beepSound');
-        beep.play();
-
-        const scannedCode = decodedText.trim();
-        const amount = parseInt(document.getElementById('creditInput').value);
-
-        db.ref('users').once('value', snapshot => {
-          const users = snapshot.val();
-          let found = false;
-
-          for (let key in users) {
-            if (users[key].code === scannedCode) {
-              found = true;
-              const currentCredits = users[key].credits || 0;
-              const newCredits = currentCredits + amount;
-
-              // Update credits in Firebase
-              db.ref('users/' + key + '/credits').set(newCredits, () => {
-                document.getElementById('username').innerText = "User: " + key;
-                document.getElementById('credits').innerText = newCredits;
-                document.getElementById('userInfo').style.display = 'block';
-                alert(Updated credits for ${key}: ${newCredits});
-              });
-              break;
-            }
-          }
-
-          if (!found) {
-            alert("No user found with this QR code.");
-          }
-        });
-      }
-    });
-  </script>
+<div class="login-box" id="creditChangeBox" style="display:none;">
+  <h3>🔄 Change User Credits</h3>
+  <input type="text" id="creditChangeInput" placeholder="+500 or -500" />
+  <button onclick="startChangeCredits()">Confirm</button>
+</div>
 
 </body>
 </html>
