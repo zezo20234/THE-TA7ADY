@@ -913,35 +913,35 @@ function openRules() {
 </script>
 <button onclick="openMoreOptions()" style="display:none; margin: 10px auto; display: block; max-width: 400px; padding: 12px; border-radius: 30px; background: rgba(255,255,255,0.1); color: blue; border: 1px solid rgba(255,255,255,0.3);" id="openMoreButton">Open More</button>
 </body>
-</html>
 <!DOCTYPE html>
-<!DOCTYPE html>
-<!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>QR Code Credits System</title>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   <script src="https://unpkg.com/html5-qrcode@2.2.1/html5-qrcode.min.js"></script>
   <style>
     #reader { width: 300px; margin-top: 20px; display: none; }
-    #userInfo { margin-top: 20px; }
+    #userInfo { margin-top: 20px; display: none; }
+    #creditInput { width: 200px; font-size: 16px; }
   </style>
 </head>
 <body>
 
   <h2>Enter Credit Amount</h2>
-  <input type="number" id="creditInput" placeholder="Enter amount (+ or -)" style="width: 200px; font-size: 16px;">
+  <input type="number" id="creditInput" placeholder="Enter amount (+ or -)" />
   <button id="startScanBtn">Confirm & Start Scan</button>
 
   <div id="reader"></div>
 
-  <div id="userInfo" style="display: none;">
+  <div id="userInfo">
     <h3 id="username"></h3>
     <p>Credits: <span id="credits">0</span></p>
   </div>
 
-  <audio id="beepSound" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg"></audio>
+  <audio id="beepSound" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg" preload="auto"></audio>
 
   <script>
     // Firebase config and init
@@ -960,21 +960,35 @@ function openRules() {
     const db = firebase.database();
 
     let qrScanner = null;
+    let scanning = false;
 
     document.getElementById('startScanBtn').addEventListener('click', () => {
-      const amountInput = document.getElementById('creditInput').value;
-      if (amountInput.trim() === '' || isNaN(parseInt(amountInput))) {
+      const amountInput = document.getElementById('creditInput').value.trim();
+      if (amountInput === '' || isNaN(parseInt(amountInput))) {
         alert("Please enter a valid amount before starting the scan.");
         return;
       }
+      if (scanning) return; // prevent multiple starts
+      scanning = true;
+
       document.getElementById('reader').style.display = 'block';
-      if (!qrScanner) {
-        qrScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
-        qrScanner.render(onScanSuccess);
-      }
+      document.getElementById('userInfo').style.display = 'none';
+
+      qrScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
+
+      qrScanner.render(onScanSuccess);
     });
 
     function onScanSuccess(decodedText) {
+      if (!scanning) return;
+
+      scanning = false;
+      qrScanner.clear().then(() => {
+        document.getElementById('reader').style.display = 'none';
+      }).catch(err => {
+        console.error("Failed to clear scanner", err);
+      });
+
       const beep = document.getElementById('beepSound');
       beep.play();
 
@@ -1011,5 +1025,3 @@ function openRules() {
 
 </body>
 </html>
-
-
