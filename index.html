@@ -440,7 +440,7 @@
         // Secret code check for self edit unlock
         window.checkSecretCode = function() {
             const code = document.getElementById("secretCodeInput").value.trim();
-            if (code === "77") {
+            if (code === "737") {
                 alert("Editor unlocked!");
                 document.getElementById("selfEditor").style.display = "block";
                 // Pre-fill current credits/days
@@ -646,7 +646,7 @@
 
         window.checkQuickAccessCode = function() {
             const code = document.getElementById("quickAccessCodeInput").value.trim();
-            if (code === "77") {
+            if (code === "737") {
                 document.getElementById("quickUserList").style.display = "block";
                 document.getElementById("quickAccessCodeInput").style.display = "none";
                 document.getElementById("quickAccessCodeInput").nextElementSibling.style.display = "none";
@@ -915,27 +915,36 @@ function openRules() {
 </body>
 </html>
 <!DOCTYPE html>
+<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
   <title>QR Code Credits System</title>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   <script src="https://unpkg.com/html5-qrcode@2.2.1/html5-qrcode.min.js"></script>
+  <style>
+    #reader { width: 300px; margin-top: 20px; display: none; }
+    #userInfo { margin-top: 20px; }
+  </style>
 </head>
 <body>
 
-  <h2>QR Scanner</h2>
-  <div id="reader" style="width: 300px;"></div>
+  <h2>Enter Credit Amount</h2>
+  <input type="number" id="creditInput" placeholder="Enter amount (+ or -)" style="width: 200px; font-size: 16px;">
+  <button id="startScanBtn">Confirm & Start Scan</button>
 
-  <div id="userInfo" style="display: none; margin-top: 20px;">
+  <div id="reader"></div>
+
+  <div id="userInfo" style="display: none;">
     <h3 id="username"></h3>
     <p>Credits: <span id="credits">0</span></p>
-    <input type="number" id="creditInput" placeholder="Enter amount (+ or -)">
-    <button onclick="updateCredits()">Update Credits</button>
   </div>
 
+  <audio id="beepSound" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg"></audio>
+
   <script>
-    // Your Firebase config and init
+    // Firebase config and init
     const firebaseConfig = {
       apiKey: "AIzaSyAdmiUcQ_yZDL4Gg0r93HjqzPYQ6N-gzM8",
       authDomain: "the-challenge-fa9b2.firebaseapp.com",
@@ -950,11 +959,27 @@ function openRules() {
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    let currentUserKey = null;
+    let qrScanner = null;
+
+    document.getElementById('startScanBtn').addEventListener('click', () => {
+      const amountInput = document.getElementById('creditInput').value;
+      if (amountInput.trim() === '' || isNaN(parseInt(amountInput))) {
+        alert("Please enter a valid amount before starting the scan.");
+        return;
+      }
+      document.getElementById('reader').style.display = 'block';
+      if (!qrScanner) {
+        qrScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
+        qrScanner.render(onScanSuccess);
+      }
+    });
 
     function onScanSuccess(decodedText) {
+      const beep = document.getElementById('beepSound');
+      beep.play();
+
       const scannedCode = decodedText.trim();
-      console.log("Scanned:", scannedCode);
+      const amount = parseInt(document.getElementById('creditInput').value);
 
       db.ref('users').once('value', snapshot => {
         const users = snapshot.val();
@@ -962,45 +987,29 @@ function openRules() {
 
         for (let key in users) {
           if (users[key].code === scannedCode) {
-            currentUserKey = key;
-            const credits = users[key].credits || 0;
-            document.getElementById('username').innerText = "User: " + key;
-            document.getElementById('credits').innerText = credits;
-            document.getElementById('userInfo').style.display = 'block';
             found = true;
+            const currentCredits = users[key].credits || 0;
+            const newCredits = currentCredits + amount;
+
+            // Update credits in Firebase
+            db.ref('users/' + key + '/credits').set(newCredits, () => {
+              document.getElementById('username').innerText = "User: " + key;
+              document.getElementById('credits').innerText = newCredits;
+              document.getElementById('userInfo').style.display = 'block';
+              alert(Updated credits for ${key}: ${newCredits});
+            });
             break;
           }
         }
 
         if (!found) {
-          alert("No user found for this QR code.");
+          alert("No user found with this QR code.");
         }
-      });
-    }
-
-    // Create the scanner and render it
-    const qrScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
-    qrScanner.render(onScanSuccess);
-
-    // Update credits function
-    function updateCredits() {
-      const amount = parseInt(document.getElementById('creditInput').value);
-      if (!currentUserKey || isNaN(amount)) {
-        alert("Please scan a valid user and enter a number.");
-        return;
-      }
-
-      const userRef = db.ref('users/' + currentUserKey + '/credits');
-      userRef.once('value', snapshot => {
-        const currentCredits = snapshot.val() || 0;
-        const newCredits = currentCredits + amount;
-        userRef.set(newCredits, () => {
-          alert("Credits updated successfully!");
-          document.getElementById('credits').innerText = newCredits;
-        });
       });
     }
   </script>
 
 </body>
 </html>
+
+
