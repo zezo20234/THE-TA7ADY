@@ -418,12 +418,12 @@ get(userRef)
 function showWelcome() {
 const loginLockIcon = document.getElementById("loginLockIcon");
 loginLockIcon.classList.add("open");
-document.getElementById("creditChangeBox").style.display = "block";
 
 setTimeout(() => {
 document.getElementById("loginBox").style.display = "none";
 document.getElementById("welcomeBox").style.display = "block";
 animateWelcomeText(currentUser);
+document.getElementById("creditChangeBox").style.display = "block";
 
 document.getElementById("reportForm").style.display = "block";
 document.querySelector('.btnshop').style.display = "block"; // Show shop open button
@@ -871,75 +871,6 @@ html5QrCode.stop().then(() => {
 }
 };
 
-window.startChangeCredits = async function() {
-    const input = document.getElementById("creditChangeInput").value.trim();
-    if (!input.match(/^[+-]\d+$/)) {
-        alert("Please enter amount like +500 or -500");
-        return;
-    }
-    const amount = parseInt(input, 10);
-    if (isNaN(amount)) {
-        alert("Invalid amount.");
-        return;
-    }
-
-    // Start QR scanner
-    if (!html5QrCode) {
-        html5QrCode = new Html5Qrcode("qr-reader");
-    }
-
-    document.getElementById('qr-reader').style.display = 'block';
-    document.getElementById('startScannerButton').style.display = 'none';
-    document.getElementById('stopScannerButton').style.display = 'block';
-
-    html5QrCode.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 250, height: 250 } },
-        async (scannedCode, decodedResult) => {
-            try {
-                // Stop scanner after scanning
-                await html5QrCode.stop();
-                document.getElementById('qr-reader').style.display = 'none';
-                document.getElementById('stopScannerButton').style.display = 'none';
-                
-                // Find user by code
-                const usersRef = ref(database, "users");
-                const snapshot = await get(usersRef);
-                if (!snapshot.exists()) {
-                    alert("No users found.");
-                    return;
-                }
-
-                let foundUser = null;
-                snapshot.forEach(childSnap => {
-                    if (childSnap.val().code === scannedCode) {
-                        foundUser = { key: childSnap.key, data: childSnap.val() };
-                    }
-                });
-
-                if (!foundUser) {
-                    alert("User with this code not found.");
-                    return;
-                }
-
-                const newCredits = (foundUser.data.credits ?? 0) + amount;
-                await update(ref(database, "users/" + foundUser.key), { credits: newCredits });
-                alert(`User ${foundUser.key} now has ${newCredits} credits.`);
-            } catch (err) {
-                console.error("Error:", err);
-                alert("Error changing credits: " + err);
-            }
-        },
-        (errorMessage) => {
-            console.warn("QR scan error:", errorMessage);
-        }
-    ).catch(err => {
-        console.error("Cannot start scanner:", err);
-        alert("Cannot start scanner: " + err);
-    });
-};
-
-
 </script>
 
 <script>
@@ -980,6 +911,81 @@ function openRules() {
 window.open('rules.html', '_blank'); // Opens 'rules.html' in a new tab/window
 }
 
+window.startChangeCredits = async function() {
+  const input = document.getElementById("creditChangeInput").value.trim();
+  if (!input.match(/^[+-]\d+$/)) {
+    alert("Please enter amount like +500 or -500");
+    return;
+  }
+  const amount = parseInt(input, 10);
+  if (isNaN(amount)) {
+    alert("Invalid amount.");
+    return;
+  }
+
+  // Make sure scanner is properly initialized
+  try {
+    if (html5QrCode) {
+      await html5QrCode.stop().catch(()=>{});
+      await html5QrCode.clear().catch(()=>{});
+    }
+  } catch (e) { console.warn(e); }
+  
+  html5QrCode = new Html5Qrcode("qr-reader");
+
+  // Show scanner div
+  document.getElementById('qr-reader').style.display = 'block';
+
+  // Start scanner with a short delay to avoid width=0
+  setTimeout(() => {
+    html5QrCode.start(
+      { facingMode: "environment" },
+      { fps: 10, qrbox: { width: 250, height: 250 } },
+      async (scannedCode, decodedResult) => {
+        try {
+          await html5QrCode.stop();
+          await html5QrCode.clear();
+          document.getElementById('qr-reader').style.display = 'none';
+
+          // Find user by code in Firebase
+          const usersRef = ref(database, "users");
+          const snapshot = await get(usersRef);
+          if (!snapshot.exists()) {
+            alert("No users found.");
+            return;
+          }
+
+          let foundUser = null;
+          snapshot.forEach(childSnap => {
+            if (childSnap.val().code === scannedCode) {
+              foundUser = { key: childSnap.key, data: childSnap.val() };
+            }
+          });
+
+          if (!foundUser) {
+            alert("User with this code not found.");
+            return;
+          }
+
+          const newCredits = (foundUser.data.credits ?? 0) + amount;
+          await update(ref(database, "users/" + foundUser.key), { credits: newCredits });
+          alert(`User "${foundUser.key}" now has ${newCredits} credits.`);
+        } catch (err) {
+          console.error("Error changing credits:", err);
+          alert("Error changing credits: " + err);
+        }
+      },
+      (errorMessage) => {
+        console.warn("QR scan error:", errorMessage);
+      }
+    ).catch(err => {
+      console.error("Cannot start scanner:", err);
+      alert("Cannot start scanner: " + err);
+      document.getElementById('qr-reader').style.display = 'none';
+    });
+  }, 300); // wait 0.3 sec to ensure video is ready
+};
+
 </script>
 <button onclick="openMoreOptions()" style="display:none; margin: 10px auto; display: block; max-width: 400px; padding: 12px; border-radius: 30px; background: rgba(255,255,255,0.1); color: blue; border: 1px solid rgba(255,255,255,0.3);" id="openMoreButton">Open More</button>
 <div class="login-box" id="creditChangeBox" style="display:none;">
@@ -988,5 +994,7 @@ window.open('rules.html', '_blank'); // Opens 'rules.html' in a new tab/window
   <button onclick="startChangeCredits()">Confirm</button>
 </div>
 
+<!-- Scanner container -->
+<div id="qr-reader" style="display:none; max-width:300px; margin:10px auto;"></div>
+
 </body>
-</html>
