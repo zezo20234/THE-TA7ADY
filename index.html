@@ -10,7 +10,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="THE CHALLENGE" />
     <meta name="mobile-web-app-capable" content="yes" />
-
+<script src="https://unpkg.com/html5-qrcode@2.2.1/html5-qrcode.min.js"></script>
     <style>
         /* Base text color for the entire body */
         body {
@@ -915,31 +915,92 @@ function openRules() {
 </body>
 </html>
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Credit Management System</title>
-    <link rel="stylesheet" href="style.css">
+  <title>QR Code Credits System</title>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.2.1/html5-qrcode.min.js"></script>
 </head>
 <body>
-    <h1>Credit Management</h1>
 
-    <div id="user-sections">
-        </div>
+  <h2>QR Scanner</h2>
+  <div id="reader" style="width: 300px;"></div>
 
-    <hr>
+  <div id="userInfo" style="display: none; margin-top: 20px;">
+    <h3 id="username"></h3>
+    <p>Credits: <span id="credits">0</span></p>
+    <input type="number" id="creditInput" placeholder="Enter amount (+ or -)">
+    <button onclick="updateCredits()">Update Credits</button>
+  </div>
 
-    <h2>Credit Scanner</h2>
-    <div id="scanner-area">
-        <video id="qr-scanner-video" width="300" height="200" style="border: 1px solid gray;"></video>
-        <p>Scan a user's QR code:</p>
-        <input type="number" id="scan-amount" placeholder="Enter amount (+/-500)">
-        <button id="deduct-scan-btn">Deduct (Scan)</button>
-        <button id="add-scan-btn">Add (Scan)</button>
-        <p id="scan-result"></p>
-    </div>
+  <script>
+    // Your Firebase config and init
+    const firebaseConfig = {
+      apiKey: "AIzaSyAdmiUcQ_yZDL4Gg0r93HjqzPYQ6N-gzM8",
+      authDomain: "the-challenge-fa9b2.firebaseapp.com",
+      databaseURL: "https://the-challenge-fa9b2-default-rtdb.firebaseio.com",
+      projectId: "the-challenge-fa9b2",
+      storageBucket: "the-challenge-fa9b2.appspot.com",
+      messagingSenderId: "4102830619",
+      appId: "1:4102830619:web:581e033f36ec02708916be",
+      measurementId: "G-7M7JLK1V86"
+    };
 
-    <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script> <script src="https://cdn.jsdelivr.net/npm/jsqr@1.0.0/dist/jsQR.min.js"></script> <script src="app.js"></script>
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    let currentUserKey = null;
+
+    function onScanSuccess(decodedText) {
+      const scannedCode = decodedText.trim();
+      console.log("Scanned:", scannedCode);
+
+      db.ref('users').once('value', snapshot => {
+        const users = snapshot.val();
+        let found = false;
+
+        for (let key in users) {
+          if (users[key].code === scannedCode) {
+            currentUserKey = key;
+            const credits = users[key].credits || 0;
+            document.getElementById('username').innerText = "User: " + key;
+            document.getElementById('credits').innerText = credits;
+            document.getElementById('userInfo').style.display = 'block';
+            found = true;
+            break;
+          }
+        }
+
+        if (!found) {
+          alert("No user found for this QR code.");
+        }
+      });
+    }
+
+    // Create the scanner and render it
+    const qrScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
+    qrScanner.render(onScanSuccess);
+
+    // Update credits function
+    function updateCredits() {
+      const amount = parseInt(document.getElementById('creditInput').value);
+      if (!currentUserKey || isNaN(amount)) {
+        alert("Please scan a valid user and enter a number.");
+        return;
+      }
+
+      const userRef = db.ref('users/' + currentUserKey + '/credits');
+      userRef.once('value', snapshot => {
+        const currentCredits = snapshot.val() || 0;
+        const newCredits = currentCredits + amount;
+        userRef.set(newCredits, () => {
+          alert("Credits updated successfully!");
+          document.getElementById('credits').innerText = newCredits;
+        });
+      });
+    }
+  </script>
+
 </body>
 </html>
