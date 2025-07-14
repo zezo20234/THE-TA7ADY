@@ -912,12 +912,32 @@ window.open('rules.html', '_blank'); // Opens 'rules.html' in a new tab/window
 
 </script>
 <button onclick="openMoreOptions()" style="display:none; margin: 10px auto; display: block; max-width: 400px; padding: 12px; border-radius: 30px; background: rgba(255,255,255,0.1); color: blue; border: 1px solid rgba(255,255,255,0.3);" id="openMoreButton">Open More</button>
-<button onclick="document.getElementById('gameSection').style.display='block'; loadGameBalance();">Open Investment Game</button>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Business Empire</title>
+</head>
+<body>
 
+<!-- Info box on your page -->
+<div id="infoBox">
+  <div>Credits: <span id="infoCredits">0</span></div>
+  <div>Days: <span id="infoDays">0</span></div>
+  <div>Version: <span id="infoVersion">45</span></div>
+  <div id="infoChallenge">Challenge: No challenge set.</div>
+</div>
+
+<!-- Button to open the investment game -->
+<button onclick="document.getElementById('gameSection').style.display='block';">Open Investment Game</button>
+
+<!-- Investment game section (hidden by default) -->
 <div id="gameSection" style="display:none;">
   <h2>📈 Business Empire</h2>
   <p>Your credits: <span id="balance">0</span></p>
-  <table>
+  <table border="1">
     <thead>
       <tr>
         <th>Asset</th>
@@ -931,130 +951,146 @@ window.open('rules.html', '_blank'); // Opens 'rules.html' in a new tab/window
   </table>
 </div>
 
-<style>
-  table { border-collapse: collapse; width: 100%; margin-top: 10px; }
-  th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
-  button { padding: 4px 8px; }
-</style>
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <script>
-  let assets = [
-    { name: "Tech Co", price: 100, owned: 0 },
-    { name: "Real Estate Fund", price: 200, owned: 0 },
-    { name: "Shipping Ltd", price: 50, owned: 0 },
-    { name: "AI Startup", price: 80, owned: 0 },
-    { name: "Green Energy", price: 120, owned: 0 },
-    { name: "Retail Chain", price: 70, owned: 0 },
-    { name: "Crypto Fund", price: 60, owned: 0 }
-  ];
-  let balance = 0;
+// ✅ Replace with YOUR real Firebase config:
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+  databaseURL: "https://YOUR_PROJECT_ID.firebaseio.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT_ID.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
 
-  function loadGameBalance() {
-    // Read credits from infoCredits span
-    let creditsSpan = document.getElementById('infoCredits');
-    if (creditsSpan) {
-      balance = parseFloat(creditsSpan.textContent) || 0;
-      updateUI();
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// Investment game logic
+let assets = [
+  { name: "Tech Co", price: 100, owned: 0 },
+  { name: "Real Estate Fund", price: 200, owned: 0 },
+  { name: "Shipping Ltd", price: 50, owned: 0 },
+  { name: "AI Startup", price: 80, owned: 0 },
+  { name: "Green Energy", price: 120, owned: 0 },
+  { name: "Retail Chain", price: 70, owned: 0 },
+  { name: "Crypto Fund", price: 60, owned: 0 }
+];
+let balance = 0;
+let userId = "user1"; // for demo; in real app use actual user ID
+
+// Hot hours: Sunday=0, Monday=1,... etc
+const hotHours = { 
+  0: [12,13,14], // Sunday
+  1: [10,11],    // Monday
+  2: [15,16],    // Tuesday
+  3: [9,10],     // Wednesday
+  4: [13,14],    // Thursday
+  5: [18,19],    // Friday
+  6: [11,12]     // Saturday
+};
+
+// Load saved data when page loads
+function loadGameData() {
+  db.ref("users/" + userId).once("value").then(snapshot => {
+    const data = snapshot.val();
+    if (data) {
+      balance = data.balance || 0;
+      assets.forEach((a, i) => a.owned = data.assets && data.assets[i] ? data.assets[i] : 0);
     }
-  }
+    updateUI();
+    updateInfoCredits();
+  });
+}
 
-  function updateUI() {
-    document.getElementById("balance").textContent = balance.toFixed(2);
-    let tbody = document.getElementById("assets");
-    tbody.innerHTML = "";
-    assets.forEach((asset, i) => {
-      let row = `<tr>
-        <td>${asset.name}</td>
-        <td>${asset.price.toFixed(2)}</td>
-        <td>${asset.owned}</td>
-        <td><button onclick="buy(${i})">Buy</button></td>
-        <td><button onclick="sell(${i})">Sell</button></td>
-      </tr>`;
-      tbody.innerHTML += row;
-    });
-  }
+// Save data to Firebase
+function saveGameData() {
+  db.ref("users/" + userId).set({
+    balance: balance,
+    assets: assets.map(a => a.owned)
+  });
+}
 
-  function buy(index) {
-    let asset = assets[index];
-    if (balance >= asset.price) {
-      balance -= asset.price;
-      asset.owned += 1;
-      updateInfoCredits();
-      updateUI();
-    } else {
-      alert("Not enough credits!");
-    }
-  }
+// Update prices every minute
+setInterval(updatePrices, 60000);
 
-  function sell(index) {
-    let asset = assets[index];
-    if (asset.owned > 0) {
-      asset.owned -= 1;
-      balance += asset.price;
-      updateInfoCredits();
-      updateUI();
-    } else {
-      alert("You don't own this asset!");
-    }
-  }
-
-  function updateInfoCredits() {
-    let creditsSpan = document.getElementById('infoCredits');
-    if (creditsSpan) {
-      creditsSpan.textContent = balance.toFixed(2);
-    }
-  }
-
-  function updatePrices() {
+function updatePrices() {
   const now = new Date();
-  const day = now.getDay(); // Sunday=0, Monday=1, ..., Saturday=6
+  const day = now.getDay(); // Sunday=0
   const hour = now.getHours();
-
-  // Define hot hours per day (example)
-  // Sunday best: 12pm, 1pm, 2pm
-  const hotHours = {
-    0: [12,13,14],    // Sunday
-    1: [10,11],       // Monday
-    2: [15,16],       // Tuesday
-    3: [9,10],        // Wednesday
-    4: [13,14],       // Thursday
-    5: [18,19],       // Friday
-    6: [11,12]        // Saturday
-  };
+  const isHotHour = hotHours[day] && hotHours[day].includes(hour);
 
   assets.forEach(asset => {
-    let change = 0;
-
-    // Check if now is a hot hour
-    const isHotHour = hotHours[day] && hotHours[day].includes(hour);
-
-    if (asset.name === "Tech Co") {
-      if (isHotHour) {
-        // Tech Co during hot hours: big positive change
-        change = Math.random() * 200; // +0~200
+    let change=0;
+    if(asset.name==="Tech Co") {
+      if(isHotHour) {
+        change = Math.random()*200;  // always positive
       } else {
-        // Normal hours: random up or down, –100~+200 with bias up
-        if (Math.random() < 0.5) {
-          change = Math.random() * 200;   // +0~200
-        } else {
-          change = -Math.random() * 100;  // –0~–100
-        }
+        if(Math.random()<0.5) change = Math.random()*200;
+        else change=-Math.random()*100;
       }
     } else {
-      if (isHotHour) {
-        // Other assets also get a boost in hot hour
-        change = Math.random() * 20; // +0~20
-      } else {
-        // Normal small random move
-        change = (Math.random() - 0.5) * 10; // –5~+5
-      }
+      if(isHotHour) change = Math.random()*20;
+      else change = (Math.random()-0.5)*10;
     }
-
-    asset.price = Math.max(1, asset.price + change);
+    asset.price = Math.max(1, asset.price+change);
   });
-
   updateUI();
 }
+
+// Update the UI
+function updateUI() {
+  document.getElementById("balance").textContent = balance.toFixed(2);
+  let tbody = document.getElementById("assets");
+  tbody.innerHTML = "";
+  assets.forEach((asset,i)=>{
+    tbody.innerHTML += `<tr>
+      <td>${asset.name}</td>
+      <td>${asset.price.toFixed(2)}</td>
+      <td>${asset.owned}</td>
+      <td><button onclick="buy(${i})">Buy</button></td>
+      <td><button onclick="sell(${i})">Sell</button></td>
+    </tr>`;
+  });
+}
+
+// Buy
+function buy(index){
+  let asset=assets[index];
+  if(balance>=asset.price){
+    balance-=asset.price;
+    asset.owned+=1;
+    updateInfoCredits();
+    updateUI();
+    saveGameData();
+  } else alert("Not enough credits!");
+}
+
+// Sell
+function sell(index){
+  let asset=assets[index];
+  if(asset.owned>0){
+    asset.owned-=1;
+    balance+=asset.price;
+    updateInfoCredits();
+    updateUI();
+    saveGameData();
+  } else alert("You don't own this asset!");
+}
+
+// Sync balance with infoCredits span
+function updateInfoCredits(){
+  let creditsSpan = document.getElementById('infoCredits');
+  if(creditsSpan) creditsSpan.textContent = balance.toFixed(2);
+}
+
+// Load game data on page load
+window.addEventListener('load', loadGameData);
 </script>
+
 </body>
 </html>
