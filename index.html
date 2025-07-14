@@ -912,7 +912,7 @@ window.open('rules.html', '_blank'); // Opens 'rules.html' in a new tab/window
 
 </script>
 <button onclick="openMoreOptions()" style="display:none; margin: 10px auto; display: block; max-width: 400px; padding: 12px; border-radius: 30px; background: rgba(255,255,255,0.1); color: blue; border: 1px solid rgba(255,255,255,0.3);" id="openMoreButton">Open More</button>
-<!-- 📦 Investment Game UI -->
+<!-- ✅ Investment game always present in HTML -->
 <div style="margin-top:10px;">
   <button onclick="toggleInvestGame()">Open Investment Game</button>
 </div>
@@ -928,12 +928,14 @@ window.open('rules.html', '_blank'); // Opens 'rules.html' in a new tab/window
         <th colspan="2">Actions</th>
       </tr>
     </thead>
-    <tbody id="assets"></tbody>
+    <tbody id="assets">
+      <!-- investment rows will appear here -->
+    </tbody>
   </table>
 </div>
 
 <script>
-  // ✅ Investment Game script
+  // ✅ Investment game code
   const assets = [
     { name: "Tech Co", price: 1000, owned: 0 },
     { name: "Media Inc", price: 800, owned: 0 },
@@ -943,92 +945,67 @@ window.open('rules.html', '_blank'); // Opens 'rules.html' in a new tab/window
     { name: "Healthcare Plus", price: 700, owned: 0 },
     { name: "Transport Systems", price: 550, owned: 0 }
   ];
-
   let balance = 0;
 
   function toggleInvestGame(){
     const box = document.getElementById("investGame");
-    box.style.display = box.style.display === "none" ? "block" : "none";
+    box.style.display = (box.style.display === "none" ? "block" : "none");
   }
 
   function loadGameData() {
     const userId = currentUser;
     const startCredits = parseFloat(document.getElementById("infoCredits").textContent) || 0;
-
-    db.ref("prices").once("value").then(priceSnap => {
-      const prices = priceSnap.val();
-      if (prices) {
-        assets.forEach((a, i) => a.price = prices[i]);
+    db.ref("prices").once("value").then(snap => {
+      const prices = snap.val();
+      if (prices) { assets.forEach((a,i)=>a.price=prices[i]); }
+      return db.ref("users/"+userId).once("value");
+    }).then(snap => {
+      const data = snap.val();
+      if (data) {
+        balance = data.balance ?? startCredits;
+        assets.forEach((a,i)=>a.owned = data.assets?.[i] ?? 0);
+      } else {
+        balance = startCredits;
+        saveUserData();
       }
-      db.ref("users/" + userId).once("value").then(userSnap => {
-        const data = userSnap.val();
-        if (data) {
-          balance = data.balance ?? startCredits;
-          assets.forEach((a, i) => a.owned = data.assets && data.assets[i] ? data.assets[i] : 0);
-        } else {
-          // First time user: start with infoCredits
-          balance = startCredits;
-          saveUserData();
-        }
-        updateUI();
-        updateInfoCredits();
-      });
+      updateUI(); updateInfoCredits();
     }).catch(console.error);
   }
 
   function saveUserData() {
-    db.ref("users/" + currentUser).set({
-      balance: balance,
-      assets: assets.map(a => a.owned)
-    });
+    db.ref("users/"+currentUser).set({ balance, assets: assets.map(a=>a.owned) });
   }
-
   function savePrices() {
-    db.ref("prices").set(assets.map(a => a.price));
+    db.ref("prices").set(assets.map(a=>a.price));
   }
 
-  // Global price update every minute, done by user1 only
-  const hotHours = {
-    0: [12,13,14], 1: [12,13,14], 2: [12,13,14], 3: [12,13,14],
-    4: [12,13,14], 5: [12,13,14], 6: [12,13,14]
-  };
-
-  setInterval(() => {
-    if (currentUser === 'user1') {
-      const now = new Date();
-      const day = now.getDay(), hour = now.getHours();
-      const isHot = hotHours[day] && hotHours[day].includes(hour);
-
-      assets.forEach(asset => {
-        let change = 0;
-        if (asset.name === "Tech Co") {
-          if (isHot) change = Math.random() * 200;
-          else change = (Math.random() < 0.5 ? Math.random() * 200 : -Math.random() * 100);
-        } else {
-          change = isHot ? Math.random() * 20 : (Math.random() - 0.5) * 10;
-        }
-        asset.price = Math.max(1, asset.price + change);
+  // Update prices globally every minute (by user1)
+  const hotHours = {0:[12,13,14],1:[12,13,14],2:[12,13,14],3:[12,13,14],4:[12,13,14],5:[12,13,14],6:[12,13,14]};
+  setInterval(()=>{
+    if(currentUser==='user1'){
+      const now=new Date(), day=now.getDay(), hour=now.getHours();
+      const isHot=hotHours[day]?.includes(hour);
+      assets.forEach(asset=>{
+        let change=0;
+        if(asset.name==="Tech Co") change=isHot?Math.random()*200:(Math.random()<0.5?Math.random()*200:-Math.random()*100);
+        else change=isHot?Math.random()*20:(Math.random()-0.5)*10;
+        asset.price=Math.max(1,asset.price+change);
       });
-
-      savePrices(); // save to Firebase so all users get same prices
-      updateUI();
+      savePrices(); updateUI();
     }
-  }, 60000); // every minute
+  },60000);
 
-  // Listen for price updates for everyone
-  db.ref("prices").on("value", snap => {
-    const prices = snap.val();
-    if (prices) {
-      assets.forEach((a, i) => a.price = prices[i]);
-      updateUI();
-    }
+  // Listen for price updates globally
+  db.ref("prices").on("value", snap=>{
+    const prices=snap.val();
+    if(prices){ assets.forEach((a,i)=>a.price=prices[i]); updateUI(); }
   });
 
-  function updateUI() {
+  function updateUI(){
     document.getElementById("balance").textContent = balance.toFixed(2);
-    let tbody = document.getElementById("assets");
+    const tbody=document.getElementById("assets");
     tbody.innerHTML = "";
-    assets.forEach((a, i) => {
+    assets.forEach((a,i)=>{
       tbody.innerHTML += `
         <tr>
           <td>${a.name}</td>
@@ -1039,42 +1016,27 @@ window.open('rules.html', '_blank'); // Opens 'rules.html' in a new tab/window
         </tr>`;
     });
   }
-
-  function updateInfoCredits() {
-    let el = document.getElementById('infoCredits');
-    if (el) el.textContent = balance.toFixed(2);
+  function updateInfoCredits(){
+    let el=document.getElementById('infoCredits');
+    if(el) el.textContent=balance.toFixed(2);
+  }
+  window.buy=i=>{
+    let a=assets[i];
+    if(balance>=a.price){
+      balance-=a.price; a.owned+=1;
+      saveUserData(); updateUI(); updateInfoCredits();
+    } else alert("Not enough credits!");
+  }
+  window.sell=i=>{
+    let a=assets[i];
+    if(a.owned>0){
+      a.owned-=1; balance+=a.price;
+      saveUserData(); updateUI(); updateInfoCredits();
+    } else alert("You don't own this asset!");
   }
 
-  window.buy = function(i) {
-    let a = assets[i];
-    if (balance >= a.price) {
-      balance -= a.price;
-      a.owned += 1;
-      saveUserData();
-      updateUI();
-      updateInfoCredits();
-    } else {
-      alert("Not enough credits!");
-    }
-  }
-
-  window.sell = function(i) {
-    let a = assets[i];
-    if (a.owned > 0) {
-      a.owned -= 1;
-      balance += a.price;
-      saveUserData();
-      updateUI();
-      updateInfoCredits();
-    } else {
-      alert("You don't own this asset!");
-    }
-  }
-
-  window.addEventListener('DOMContentLoaded', () => {
-    if (typeof currentUser !== 'undefined') {
-      loadGameData();
-    }
+  window.addEventListener('DOMContentLoaded', ()=>{
+    if(typeof currentUser!=='undefined') loadGameData();
   });
 </script>
 </body>
