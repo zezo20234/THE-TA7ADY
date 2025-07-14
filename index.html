@@ -913,9 +913,12 @@ window.open('rules.html', '_blank'); // Opens 'rules.html' in a new tab/window
 </script>
 <button onclick="openMoreOptions()" style="display:none; margin: 10px auto; display: block; max-width: 400px; padding: 12px; border-radius: 30px; background: rgba(255,255,255,0.1); color: blue; border: 1px solid rgba(255,255,255,0.3);" id="openMoreButton">Open More</button>
 <!-- Button to open the game -->
-<button onclick="document.getElementById('gameSection').style.display='block';">Open Investment Game</button>
+<!-- Button to open the game -->
+<button onclick="document.getElementById('gameSection').style.display='block';">
+  Open Investment Game
+</button>
 
-<!-- Investment game section (hidden by default) -->
+<!-- Game section -->
 <div id="gameSection" style="display:none;">
   <h2>📈 Business Empire</h2>
   <p>Your credits: <span id="balance">0</span></p>
@@ -939,19 +942,21 @@ window.open('rules.html', '_blank'); // Opens 'rules.html' in a new tab/window
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-  // ✅ Replace with your real Firebase config:
+  // ✅ Your Firebase config:
   const firebaseConfig = {
     apiKey: "AIzaSyAdmiUcQ_yZDL4Gg0r93HjqzPYQ6N-gzM8",
-authDomain: "the-challenge-fa9b2.firebaseapp.com",
-databaseURL: "https://the-challenge-fa9b2-default-rtdb.firebaseio.com",
-projectId: "the-challenge-fa9b2",
-storageBucket: "the-challenge-fa9b2.appspot.com",
-messagingSenderId: "4102830619",
-appId: "1:4102830619:web:581e033f36ec02708916be",
-measurementId: "G-7M7JLK1V86"
+    authDomain: "the-challenge-fa9b2.firebaseapp.com",
+    databaseURL: "https://the-challenge-fa9b2-default-rtdb.firebaseio.com",
+    projectId: "the-challenge-fa9b2",
+    storageBucket: "the-challenge-fa9b2.appspot.com",
+    messagingSenderId: "4102830619",
+    appId: "1:4102830619:web:581e033f36ec02708916be",
+    measurementId: "G-7M7JLK1V86"
   };
   firebase.initializeApp(firebaseConfig);
   const db = firebase.database();
+
+  const userId = "user1"; // you can change per user
 
   let assets = [
     { name: "Tech Co", price: 100, owned: 0 },
@@ -962,37 +967,56 @@ measurementId: "G-7M7JLK1V86"
     { name: "Retail Chain", price: 70, owned: 0 },
     { name: "Crypto Fund", price: 60, owned: 0 }
   ];
+
   let balance = 0;
-  let userId = "user1";
 
   const hotHours = {
     0: [12,13,14], 1: [10,11], 2: [15,16],
     3: [9,10], 4: [13,14], 5: [18,19], 6: [11,12]
   };
 
+  // Load global prices & user's data
   function loadGameData() {
-    db.ref("users/" + userId).once("value").then(snap => {
-      const data = snap.val();
-      if (data) {
-        balance = data.balance || 0;
-        assets.forEach((a, i) => a.owned = data.assets && data.assets[i] ? data.assets[i] : 0);
+    db.ref("prices").once("value").then(priceSnap => {
+      const prices = priceSnap.val();
+      if (prices) {
+        assets.forEach((a, i) => a.price = prices[i]);
       }
-      updateUI();
-      updateInfoCredits();
+      db.ref("users/" + userId).once("value").then(userSnap => {
+        const data = userSnap.val();
+        if (data) {
+          balance = data.balance || 1000;
+          assets.forEach((a, i) => a.owned = data.assets && data.assets[i] ? data.assets[i] : 0);
+        } else {
+          // First time user: give 1000 credits
+          balance = 1000;
+          saveUserData();
+        }
+        updateUI();
+        updateInfoCredits();
+      });
     }).catch(console.error);
   }
 
-  function saveGameData() {
+  // Save user's data
+  function saveUserData() {
     db.ref("users/" + userId).set({
       balance: balance,
       assets: assets.map(a => a.owned)
     });
   }
 
-  function updatePrices() {
+  // Save global prices
+  function savePrices() {
+    db.ref("prices").set(assets.map(a => a.price));
+  }
+
+  // Update prices every minute, only if user is admin (here: user1)
+  setInterval(() => {
     const now = new Date();
     const day = now.getDay(), hour = now.getHours();
     const isHot = hotHours[day] && hotHours[day].includes(hour);
+
     assets.forEach(asset => {
       let change=0;
       if(asset.name==="Tech Co"){
@@ -1001,12 +1025,24 @@ measurementId: "G-7M7JLK1V86"
       } else {
         change=isHot?Math.random()*20:(Math.random()-0.5)*10;
       }
-      asset.price=Math.max(1, asset.price+change);
+      asset.price = Math.max(1, asset.price+change);
     });
-    updateUI();
-  }
 
-  function updateUI() {
+    savePrices();
+    updateUI();
+  }, 60000);
+
+  // Listen for price changes to update all users live
+  db.ref("prices").on("value", snap => {
+    const prices = snap.val();
+    if(prices) {
+      assets.forEach((a, i) => a.price = prices[i]);
+      updateUI();
+    }
+  });
+
+  // Update UI
+  function updateUI(){
     document.getElementById("balance").textContent = balance.toFixed(2);
     let tbody = document.getElementById("assets");
     tbody.innerHTML = "";
@@ -1021,37 +1057,40 @@ measurementId: "G-7M7JLK1V86"
     });
   }
 
-  // Buy and sell: must be global to work from inline HTML onclick
-  window.buy = function(i) {
-    let a=assets[i];
-    if(balance>=a.price){
-      balance-=a.price;
-      a.owned+=1;
-      updateInfoCredits();
-      updateUI();
-      saveGameData();
-    } else alert("Not enough credits!");
-  }
-
-  window.sell = function(i) {
-    let a=assets[i];
-    if(a.owned>0){
-      a.owned-=1;
-      balance+=a.price;
-      updateInfoCredits();
-      updateUI();
-      saveGameData();
-    } else alert("You don't own this asset!");
-  }
-
-  function updateInfoCredits() {
+  // Sync balance to infoCredits span
+  function updateInfoCredits(){
     let el=document.getElementById('infoCredits');
     if(el) el.textContent=balance.toFixed(2);
   }
 
-  // Start updating prices every minute
-  setInterval(updatePrices, 60000);
+  // Buy and sell functions
+  window.buy = function(i){
+    let a=assets[i];
+    if(balance >= a.price){
+      balance -= a.price;
+      a.owned += 1;
+      saveUserData();
+      updateUI();
+      updateInfoCredits();
+    } else {
+      alert("Not enough credits!");
+    }
+  }
 
+  window.sell = function(i){
+    let a=assets[i];
+    if(a.owned > 0){
+      a.owned -= 1;
+      balance += a.price;
+      saveUserData();
+      updateUI();
+      updateInfoCredits();
+    } else {
+      alert("You don't own this asset!");
+    }
+  }
+
+  // Start
   loadGameData();
 });
 </script>
