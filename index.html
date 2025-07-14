@@ -1006,15 +1006,55 @@ window.open('rules.html', '_blank'); // Opens 'rules.html' in a new tab/window
   }
 
   function updatePrices() {
-    assets.forEach(asset => {
-      let change = (Math.random() - 0.5) * 10; // -5 to +5
-      asset.price = Math.max(1, asset.price + change);
-    });
-    updateUI();
-  }
+  const now = new Date();
+  const day = now.getDay(); // Sunday=0, Monday=1, ..., Saturday=6
+  const hour = now.getHours();
 
-  // Update prices every minute
-  setInterval(updatePrices, 60000);
+  // Define hot hours per day (example)
+  // Sunday best: 12pm, 1pm, 2pm
+  const hotHours = {
+    0: [12,13,14],    // Sunday
+    1: [10,11],       // Monday
+    2: [15,16],       // Tuesday
+    3: [9,10],        // Wednesday
+    4: [13,14],       // Thursday
+    5: [18,19],       // Friday
+    6: [11,12]        // Saturday
+  };
+
+  assets.forEach(asset => {
+    let change = 0;
+
+    // Check if now is a hot hour
+    const isHotHour = hotHours[day] && hotHours[day].includes(hour);
+
+    if (asset.name === "Tech Co") {
+      if (isHotHour) {
+        // Tech Co during hot hours: big positive change
+        change = Math.random() * 200; // +0~200
+      } else {
+        // Normal hours: random up or down, –100~+200 with bias up
+        if (Math.random() < 0.5) {
+          change = Math.random() * 200;   // +0~200
+        } else {
+          change = -Math.random() * 100;  // –0~–100
+        }
+      }
+    } else {
+      if (isHotHour) {
+        // Other assets also get a boost in hot hour
+        change = Math.random() * 20; // +0~20
+      } else {
+        // Normal small random move
+        change = (Math.random() - 0.5) * 10; // –5~+5
+      }
+    }
+
+    asset.price = Math.max(1, asset.price + change);
+  });
+
+  updateUI();
+}
 </script>
 </body>
 </html>
