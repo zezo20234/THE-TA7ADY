@@ -912,12 +912,8 @@ window.open('rules.html', '_blank'); // Opens 'rules.html' in a new tab/window
 
 </script>
 <button onclick="openMoreOptions()" style="display:none; margin: 10px auto; display: block; max-width: 400px; padding: 12px; border-radius: 30px; background: rgba(255,255,255,0.1); color: blue; border: 1px solid rgba(255,255,255,0.3);" id="openMoreButton">Open More</button>
-<!-- ✅ Investment game always present in HTML -->
-<div style="margin-top:10px;">
-  <button onclick="toggleInvestGame()">Open Investment Game</button>
-</div>
-
-<div id="investGame" style="display:none; margin-top:10px;">
+<!-- ✅ Investment game always visible -->
+<div id="investGame" style="margin-top:10px;">
   <div>Balance: <span id="balance">0</span></div>
   <table border="1" style="width:100%; margin-top:5px;">
     <thead>
@@ -947,11 +943,6 @@ window.open('rules.html', '_blank'); // Opens 'rules.html' in a new tab/window
   ];
   let balance = 0;
 
-  function toggleInvestGame(){
-    const box = document.getElementById("investGame");
-    box.style.display = (box.style.display === "none" ? "block" : "none");
-  }
-
   function loadGameData() {
     const userId = currentUser;
     const startCredits = parseFloat(document.getElementById("infoCredits").textContent) || 0;
@@ -979,7 +970,7 @@ window.open('rules.html', '_blank'); // Opens 'rules.html' in a new tab/window
     db.ref("prices").set(assets.map(a=>a.price));
   }
 
-  // Update prices globally every minute (by user1)
+  // Update prices globally every minute (only by admin user1)
   const hotHours = {0:[12,13,14],1:[12,13,14],2:[12,13,14],3:[12,13,14],4:[12,13,14],5:[12,13,14],6:[12,13,14]};
   setInterval(()=>{
     if(currentUser==='user1'){
@@ -995,7 +986,7 @@ window.open('rules.html', '_blank'); // Opens 'rules.html' in a new tab/window
     }
   },60000);
 
-  // Listen for price updates globally
+  // Listen for global price updates to sync all users live
   db.ref("prices").on("value", snap=>{
     const prices=snap.val();
     if(prices){ assets.forEach((a,i)=>a.price=prices[i]); updateUI(); }
@@ -1016,10 +1007,12 @@ window.open('rules.html', '_blank'); // Opens 'rules.html' in a new tab/window
         </tr>`;
     });
   }
+
   function updateInfoCredits(){
     let el=document.getElementById('infoCredits');
     if(el) el.textContent=balance.toFixed(2);
   }
+
   window.buy=i=>{
     let a=assets[i];
     if(balance>=a.price){
@@ -1027,6 +1020,7 @@ window.open('rules.html', '_blank'); // Opens 'rules.html' in a new tab/window
       saveUserData(); updateUI(); updateInfoCredits();
     } else alert("Not enough credits!");
   }
+
   window.sell=i=>{
     let a=assets[i];
     if(a.owned>0){
