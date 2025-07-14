@@ -205,7 +205,7 @@ margin-top: 10px;
 <div id="infoBox">
 <div>Credits: <span id="infoCredits">0</span></div>
 <div>Days: <span id="infoDays">0</span></div>
-<div>Version: <span id="infoVersion">45.5</span></div>
+<div>Version: <span id="infoVersion">45</span></div>
 <div id="infoChallenge">Challenge: No challenge set.</div>
 </div>
 <button id="logoutButton" onclick="logout()" style="display:none; margin: 20px auto; display: block; max-width: 400px; padding: 12px; border-radius: 30px; background: rgba(255,255,255,0.1); color: blue; border: 1px solid rgba(255,255,255,0.3);">Log Out</button>
@@ -215,8 +215,8 @@ margin-top: 10px;
 Login
 <span id="loginLockIcon" style="display:inline-block; width:24px; height:24px; vertical-align:middle; margin-left:8px;">
 <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" >
-    <path id="lockShackle" d="M6 10V7a6 6 0 1112 0v3" stroke="blue" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-    <rect x="6" y="10" width="12" height="10" rx="2" ry="2" stroke="blue" stroke-width="2" />
+    <path id="lockShackle" d="M6 10V7a6 6 0 1112 0v3" stroke="blue" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="6" y="10" width="12" height="10" rx="2" ry="2" stroke="blue" stroke-width="2" />
 </svg>
 </span>
 </h2>
@@ -342,17 +342,17 @@ Login
 <script type="module">
 // Import modular Firebase SDK functions
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.4/firebase-app.js";
-import { getDatabase, ref, get, set, onValue, update, remove } from "https://www.gstatic.com/firebasejs/9.6.4/firebase-database.js";
+import { getDatabase, ref, get, set, onValue, update, remove, push } from "https://www.gstatic.com/firebasejs/9.6.4/firebase-database.js";
 
 // Default users with passwords (you can add more)
 const defaultUsers = {
 asser: { password: "asser2025" },
 layan: { password: "layan999" },
 zezo: { password: "zezo2023" },
-bank: { password: "bank" }  
+bank: { password: "bank" }  
 };
 
-// Firebase config
+// Firebase config (REPLACE WITH YOUR ACTUAL CONFIG)
 const firebaseConfig = {
 apiKey: "AIzaSyAdmiUcQ_yZDL4Gg0r93HjqzPYQ6N-gzM8",
 authDomain: "the-challenge-fa9b2.firebaseapp.com",
@@ -402,16 +402,16 @@ const userRef = ref(database, "users/" + currentUser);
 
 get(userRef)
 .then((snapshot) => {
-    if (snapshot.exists()) {
-        currentUserData = snapshot.val();
-    } else {
-        currentUserData = { credits: 0, days: 0 };
-        set(userRef, currentUserData);
-    }
-    showWelcome();
+    if (snapshot.exists()) {
+        currentUserData = snapshot.val();
+    } else {
+        currentUserData = { credits: 0, days: 0 };
+        set(userRef, currentUserData);
+    }
+    showWelcome();
 })
 .catch((error) => {
-    alert("Error reading data: " + error);
+    alert("Error reading data: " + error);
 });
 };
 
@@ -449,11 +449,11 @@ document.getElementById("selfDays").value = currentUserData.days ?? 0;
 
 // Load existing challenge from Firebase into textarea
 get(ref(database, 'global/challenge')).then(snapshot => {
-    if (snapshot.exists()) {
-        document.getElementById("challengeText").value = snapshot.val();
-    } else {
-        document.getElementById("challengeText").value = "";
-    }
+    if (snapshot.exists()) {
+        document.getElementById("challengeText").value = snapshot.val();
+    } else {
+        document.getElementById("challengeText").value = "";
+    }
 });
 } else {
 alert("Wrong secret code.");
@@ -484,7 +484,7 @@ alert("Error saving data: " + err);
 
 if (challenge) {
 set(ref(database, 'global/challenge'), challenge).catch(err => {
-    alert("Error saving challenge: " + err);
+    alert("Error saving challenge: " + err);
 });
 }
 };
@@ -533,15 +533,15 @@ currentUser = savedUser;
 const userRef = ref(database, 'users/' + currentUser);
 
 get(userRef).then(snapshot => {
-    if (snapshot.exists()) {
-        currentUserData = snapshot.val();
-    } else {
-        currentUserData = { credits: 0, days: 0 };
-        set(userRef, currentUserData);
-    }
-    showWelcome();
+    if (snapshot.exists()) {
+        currentUserData = snapshot.val();
+    } else {
+        currentUserData = { credits: 0, days: 0 };
+        set(userRef, currentUserData);
+    }
+    showWelcome();
 }).catch(error => {
-    alert("Auto-login error: " + error);
+    alert("Auto-login error: " + error);
 });
 }
 });
@@ -601,47 +601,139 @@ document.getElementById("creditCodeBox").style.display = "block";
 document.getElementById("selfEditArea").style.display = "block";
 };
 
-window.buyItem = function (creditsCost, daysChange) {
-if (!currentUserData) {
-alert("You must be logged in.");
-return;
-}
+// --- MODIFIED BUY ITEM FUNCTION (CLIENT-SIDE ONLY) ---
+window.buyItem = async function (creditsCost, daysChange) {
+    if (!currentUser) {
+        alert("You must be logged in.");
+        return;
+    }
 
-if (infiniteCreditsActive) {
-const newDays = (currentUserData.days ?? 0) + daysChange;
-const userRef = ref(database, "users/" + currentUser);
-update(userRef, { days: newDays }).then(() => {
-    currentUserData.days = newDays;
-    document.getElementById("infoDays").textContent = newDays;
-    alert("Purchase successful with infinite credits!");
-}).catch(err => {
-    alert("Error updating data: " + err);
-});
-return;
-}
+    if (infiniteCreditsActive) {
+        const userRef = ref(database, "users/" + currentUser);
+        const newDays = (currentUserData.days ?? 0) + daysChange;
 
-if (currentUserData.credits < creditsCost) {
-alert("Not enough credits.");
-return;
-}
+        try {
+            await update(userRef, { days: newDays });
+            currentUserData.days = newDays;
+            document.getElementById("infoDays").textContent = newDays;
+            alert("Purchase successful with infinite credits (days updated)! No credits deducted.");
+        } catch (err) {
+            alert("Error updating days with infinite credits: " + err.message);
+            console.error("Error updating days with infinite credits:", err);
+        }
+        return;
+    }
 
-const newCredits = currentUserData.credits - creditsCost;
-const newDays = (currentUserData.days ?? 0) + daysChange;
+    const userCreditsRef = ref(database, `users/${currentUser}/credits`);
+    const userDaysRef = ref(database, `users/${currentUser}/days`);
+    const bankCreditsRef = ref(database, 'bank/totalCredits');
 
-const userRef = ref(database, "users/" + currentUser);
+    try {
+        const userSnapshot = await get(userCreditsRef);
+        const currentCredits = userSnapshot.exists() ? userSnapshot.val() : 0;
 
-update(userRef, {
-credits: newCredits,
-days: newDays
-}).then(() => {
-currentUserData.credits = newCredits;
-currentUserData.days = newDays;
-document.getElementById("infoCredits").textContent = newCredits;
-document.getElementById("infoDays").textContent = newDays;
-alert("Purchase successful!");
-}).catch(err => {
-alert("Error updating data: " + err);
-});
+        if (currentCredits < creditsCost) {
+            alert("Not enough credits.");
+            return;
+        }
+
+        const bankSnapshot = await get(bankCreditsRef);
+        const currentBankCredits = bankSnapshot.exists() ? bankSnapshot.val() : 0;
+
+        const newUserCredits = currentCredits - creditsCost;
+        const newUserDays = (currentUserData.days ?? 0) + daysChange;
+        const newBankTotalCredits = currentBankCredits + creditsCost;
+
+        const updates = {};
+        updates[`users/${currentUser}/credits`] = newUserCredits;
+        updates[`users/${currentUser}/days`] = newUserDays;
+        updates['bank/totalCredits'] = newBankTotalCredits;
+        updates['bank/lastUpdated'] = Date.now();
+
+        await update(ref(database), updates);
+
+        currentUserData.credits = newUserCredits;
+        currentUserData.days = newUserDays;
+        document.getElementById("infoCredits").textContent = newUserCredits;
+        document.getElementById("infoDays").textContent = newUserDays;
+        alert("Purchase successful! Credits transferred to bank.");
+
+        const transactionRef = push(ref(database, 'transactions'));
+        await set(transactionRef, {
+            userId: currentUser,
+            creditsSpent: creditsCost,
+            daysChange: daysChange,
+            creditsToBank: creditsCost,
+            timestamp: Date.now(),
+            status: 'completed',
+            itemBought: `Credits: ${creditsCost}, Days: ${daysChange}`
+        });
+
+    } catch (error) {
+        console.error("Error during purchase:", error);
+        alert("An error occurred during purchase: " + error.message);
+    }
+};
+
+// --- MODIFIED BUY INFINITE CREDITS FUNCTION (CLIENT-SIDE ONLY) ---
+window.buyInfiniteCredits = async function() {
+    const creditsCost = 16000;
+
+    if (!currentUser) {
+        alert("You must be logged in to buy this.");
+        return;
+    }
+
+    const userCreditsRef = ref(database, `users/${currentUser}/credits`);
+    const bankCreditsRef = ref(database, 'bank/totalCredits');
+
+    try {
+        const userSnapshot = await get(userCreditsRef);
+        const currentCredits = userSnapshot.exists() ? userSnapshot.val() : 0;
+
+        if (currentCredits < creditsCost) {
+            alert("You need " + creditsCost + " credits to buy Infinite Credits!");
+            return;
+        }
+
+        const bankSnapshot = await get(bankCreditsRef);
+        const currentBankCredits = bankSnapshot.exists() ? bankSnapshot.val() : 0;
+
+        const newUserCredits = currentCredits - creditsCost;
+        const newBankTotalCredits = currentBankCredits + creditsCost;
+
+        const updates = {};
+        updates[`users/${currentUser}/credits`] = newUserCredits;
+        updates['bank/totalCredits'] = newBankTotalCredits;
+        updates['bank/lastUpdated'] = Date.now();
+
+        await update(ref(database), updates);
+
+        currentUserData.credits = newUserCredits;
+        document.getElementById("infoCredits").textContent = newUserCredits;
+        alert("Infinite Credits activated for 2.5 seconds!");
+
+        infiniteCreditsActive = true;
+        setTimeout(() => {
+            infiniteCreditsActive = false;
+            alert("Infinite Credits deactivated.");
+        }, 2500);
+
+        const transactionRef = push(ref(database, 'transactions'));
+        await set(transactionRef, {
+            userId: currentUser,
+            creditsSpent: creditsCost,
+            daysChange: 0,
+            creditsToBank: creditsCost,
+            timestamp: Date.now(),
+            status: 'completed',
+            itemBought: 'Infinite Credits (2.5s)'
+        });
+
+    } catch (error) {
+        console.error("Error purchasing Infinite Credits:", error);
+        alert("Error purchasing Infinite Credits: " + error.message);
+    }
 };
 
 window.checkQuickAccessCode = function() {
@@ -657,36 +749,6 @@ alert("Incorrect Quick Access Code!");
 
 window.quickLoginUser = function(user) {
 window.checkLogin(user);
-};
-
-window.buyInfiniteCredits = function() {
-const creditsCost = 16000;
-if (!currentUserData) {
-alert("You must be logged in to buy this.");
-return;
-}
-
-if (currentUserData.credits < creditsCost) {
-alert("You need " + creditsCost + " credits to buy Infinite Credits!");
-return;
-}
-
-const newCredits = currentUserData.credits - creditsCost;
-const userRef = ref(database, "users/" + currentUser);
-
-update(userRef, { credits: newCredits }).then(() => {
-currentUserData.credits = newCredits;
-document.getElementById("infoCredits").textContent = newCredits;
-alert("Infinite Credits activated for 2.5 seconds!");
-
-infiniteCreditsActive = true;
-setTimeout(() => {
-    infiniteCreditsActive = false;
-    alert("Infinite Credits deactivated.");
-}, 2500); // 2.5 seconds
-}).catch(err => {
-alert("Error purchasing Infinite Credits: " + err);
-});
 };
 
 // --- QR Code Generation Function ---
@@ -708,7 +770,7 @@ correctLevel : QRCode.CorrectLevel.H
 }
 
 // --- Credit Code Generation ---
-window.generateCreditCode = function() {
+window.generateCreditCode = async function() {
 const amountToCode = parseInt(document.getElementById("createCodeAmount").value, 10);
 
 if (!currentUser) {
@@ -742,21 +804,22 @@ const updates = {};
 updates['/users/' + currentUser + '/credits'] = senderNewCredits;
 updates['/creditCodes/' + newCode] = codeData;
 
-update(ref(database), updates).then(() => {
-// Update UI
-currentUserData.credits = senderNewCredits;
-document.getElementById("infoCredits").textContent = senderNewCredits;
-document.getElementById("createCodeAmount").value = ''; // Clear the input field
+try {
+  await update(ref(database), updates);
+  // Update UI
+  currentUserData.credits = senderNewCredits;
+  document.getElementById("infoCredits").textContent = senderNewCredits;
+  document.getElementById("createCodeAmount").value = ''; // Clear the input field
 
-alert(`QR Code generated for ${amountToCode} credits!`);
+  alert(`QR Code generated for ${amountToCode} credits!`);
 
-// --- Generate QR Code for the newCode ---
-generateQRCode(newCode);
+  // --- Generate QR Code for the newCode ---
+  generateQRCode(newCode);
 
-}).catch(error => {
-console.error("Error creating credit code:", error);
-alert("Error creating credit code. Please try again.");
-});
+} catch (error) {
+  console.error("Error creating credit code:", error);
+  alert("Error creating credit code. Please try again.");
+}
 };
 
 // --- Credit Code Redemption (modified to accept scanned code) ---
@@ -777,16 +840,16 @@ const codeRef = ref(database, 'creditCodes/' + codeToRedeem);
 try {
 const snapshot = await get(codeRef);
 if (!snapshot.exists()) {
-    alert("Invalid or expired credit code.");
-    return;
+    alert("Invalid or expired credit code.");
+    return;
 }
 
 const codeData = snapshot.val();
 if (codeData.expiresAt && Date.now() > codeData.expiresAt) {
-    alert("This credit code has expired.");
-    // Optionally remove expired code from Firebase
-    remove(codeRef);
-    return;
+    alert("This credit code has expired.");
+    // Optionally remove expired code from Firebase
+    remove(codeRef);
+    return;
 }
 
 const creditsToAdd = codeData.amount;
@@ -827,24 +890,24 @@ document.getElementById('redeemManualButton').style.display = 'block';
 html5QrCode.start(
 { facingMode: "environment" }, // Prefer back camera
 {
-    fps: 10,    // frames per second
-    qrbox: { width: 250, height: 250 }  // confine QR box to 250x250
+    fps: 10,    // frames per second
+    qrbox: { width: 250, height: 250 }  // confine QR box to 250x250
 },
 (decodedText, decodedResult) => {
-    // console.log(`QR Code detected: ${decodedText}`);
-    if (decodedText) {
-        html5QrCode.stop().then(() => {
-            // console.log("QR Code scanner stopped.");
-            document.getElementById('qr-reader').style.display = 'none';
-            document.getElementById('stopScannerButton').style.display = 'none';
-            window.redeemCreditCode(decodedText); // Redeem the scanned code
-        }).catch(err => {
-            console.error("Error stopping scanner:", err);
-        });
-    }
+    // console.log(`QR Code detected: ${decodedText}`);
+    if (decodedText) {
+        html5QrCode.stop().then(() => {
+            // console.log("QR Code scanner stopped.");
+            document.getElementById('qr-reader').style.display = 'none';
+            document.getElementById('stopScannerButton').style.display = 'none';
+            window.redeemCreditCode(decodedText); // Redeem the scanned code
+        }).catch(err => {
+            console.error("Error stopping scanner:", err);
+        });
+    }
 },
 (errorMessage) => {
-    // console.warn(`QR Code scanning error: ${errorMessage}`);
+    // console.warn(`QR Code scanning error: ${errorMessage}`);
 }
 ).catch((err) => {
 console.error(`Unable to start QR Code scanner: ${err}`);
@@ -858,14 +921,14 @@ document.getElementById('stopScannerButton').style.display = 'none';
 window.stopQrCodeScanner = function() {
 if (html5QrCode && html5QrCode.isScanning) {
 html5QrCode.stop().then(() => {
-    // console.log("QR Code scanner stopped.");
-    document.getElementById('qr-reader').style.display = 'none';
-    document.getElementById('startScannerButton').style.display = 'block';
-    document.getElementById('stopScannerButton').style.display = 'none';
-    document.getElementById('redeemCodeInput').style.display = 'block';
-    document.getElementById('redeemManualButton').style.display = 'block';
+    // console.log("QR Code scanner stopped.");
+    document.getElementById('qr-reader').style.display = 'none';
+    document.getElementById('startScannerButton').style.display = 'block';
+    document.getElementById('stopScannerButton').style.display = 'none';
+    document.getElementById('redeemCodeInput').style.display = 'block';
+    document.getElementById('redeemManualButton').style.display = 'block';
 }).catch(err => {
-    console.error("Error stopping scanner:", err);
+    console.error("Error stopping scanner:", err);
 });
 }
 };
@@ -909,10 +972,8 @@ setupDailyDaysDecrement();
 function openRules() {
 window.open('rules.html', '_blank'); // Opens 'rules.html' in a new tab/window
 }
-
 </script>
 <button onclick="openMoreOptions()" style="display:none; margin: 10px auto; display: block; max-width: 400px; padding: 12px; border-radius: 30px; background: rgba(255,255,255,0.1); color: blue; border: 1px solid rgba(255,255,255,0.3);" id="openMoreButton">Open More</button>
-<!-- Investment game table (always visible) -->
 <div id="investGame" style="margin-top:10px;">
   <div>Balance: <span id="balance">0</span></div>
   <table border="1" style="width:100%; margin-top:5px;">
@@ -925,119 +986,58 @@ window.open('rules.html', '_blank'); // Opens 'rules.html' in a new tab/window
       </tr>
     </thead>
     <tbody id="assets">
-      <tr><td colspan="5">Loading...</td></tr>
+      <tr>
+        <td>Tech Co</td>
+        <td>1000.00</td>
+        <td>0</td>
+        <td><button onclick="buy(0)">Buy</button></td>
+        <td><button onclick="sell(0)">Sell</button></td>
+      </tr>
+      <tr>
+        <td>Media Inc</td>
+        <td>800.00</td>
+        <td>0</td>
+        <td><button onclick="buy(1)">Buy</button></td>
+        <td><button onclick="sell(1)">Sell</button></td>
+      </tr>
+      <tr>
+        <td>Food Ltd</td>
+        <td>500.00</td>
+        <td>0</td>
+        <td><button onclick="buy(2)">Buy</button></td>
+        <td><button onclick="sell(2)">Sell</button></td>
+      </tr>
+      <tr>
+        <td>Retail Corp</td>
+        <td>400.00</td>
+        <td>0</td>
+        <td><button onclick="buy(3)">Buy</button></td>
+        <td><button onclick="sell(3)">Sell</button></td>
+      </tr>
+      <tr>
+        <td>Energy Group</td>
+        <td>600.00</td>
+        <td>0</td>
+        <td><button onclick="buy(4)">Buy</button></td>
+        <td><button onclick="sell(4)">Sell</button></td>
+      </tr>
+      <tr>
+        <td>Healthcare Plus</td>
+        <td>700.00</td>
+        <td>0</td>
+        <td><button onclick="buy(5)">Buy</button></td>
+        <td><button onclick="sell(5)">Sell</button></td>
+      </tr>
+      <tr>
+        <td>Transport Systems</td>
+        <td>550.00</td>
+        <td>0</td>
+        <td><button onclick="buy(6)">Buy</button></td>
+        <td><button onclick="sell(6)">Sell</button></td>
+      </tr>
     </tbody>
-  </table>
+  </table>
 </div>
 
-<script>
-const assets = [
-  { name: "Tech Co", price: 1000, owned: 0 },
-  { name: "Media Inc", price: 800, owned: 0 },
-  { name: "Food Ltd", price: 500, owned: 0 },
-  { name: "Retail Corp", price: 400, owned: 0 },
-  { name: "Energy Group", price: 600, owned: 0 },
-  { name: "Healthcare Plus", price: 700, owned: 0 },
-  { name: "Transport Systems", price: 550, owned: 0 }
-];
-let balance = 0;
-
-// Start when page and scripts are fully loaded
-window.addEventListener('load', ()=>{
-  if(typeof currentUser!=='undefined' && typeof db!=='undefined') loadGameData();
-  else console.error('currentUser or db not ready');
-});
-
-// Load data
-function loadGameData(){
-  const userId=currentUser;
-  const startCredits=parseFloat(document.getElementById("infoCredits").textContent)||0;
-  db.ref("prices").once("value").then(snap=>{
-    const prices=snap.val();
-    if(prices){ assets.forEach((a,i)=>a.price=prices[i]); }
-    return db.ref("users/"+userId).once("value");
-  }).then(snap=>{
-    const data=snap.val();
-    if(data){
-      balance=data.balance??startCredits;
-      assets.forEach((a,i)=>a.owned=data.assets?.[i]??0);
-    } else {
-      balance=startCredits;
-      saveUserData();
-    }
-    updateUI(); updateInfoCredits();
-  }).catch(console.error);
-}
-
-function saveUserData(){
-  db.ref("users/"+currentUser).set({ balance, assets: assets.map(a=>a.owned) });
-}
-function savePrices(){
-  db.ref("prices").set(assets.map(a=>a.price));
-}
-
-// Price update every minute by admin user (user1)
-const hotHours={0:[12,13,14],1:[12,13,14],2:[12,13,14],3:[12,13,14],4:[12,13,14],5:[12,13,14],6:[12,13,14]};
-setInterval(()=>{
-  if(currentUser==='user1'){
-    const now=new Date(), day=now.getDay(), hour=now.getHours();
-    const isHot=hotHours[day]?.includes(hour);
-    assets.forEach(asset=>{
-      let change=0;
-      if(asset.name==="Tech Co")
-        change=isHot?Math.random()*200:(Math.random()<0.5?Math.random()*200:-Math.random()*100);
-      else
-        change=isHot?Math.random()*20:(Math.random()-0.5)*10;
-      asset.price=Math.max(1,asset.price+change);
-    });
-    savePrices(); updateUI();
-  }
-},60000);
-
-// Listen to global prices → update all users
-db.ref("prices").on("value", snap=>{
-  const prices=snap.val();
-  if(prices){ assets.forEach((a,i)=>a.price=prices[i]); updateUI(); }
-});
-
-// Update table
-function updateUI(){
-  document.getElementById("balance").textContent=balance.toFixed(2);
-  let tbody=document.getElementById("assets");
-  tbody.innerHTML="";
-  assets.forEach((a,i)=>{
-    tbody.innerHTML+=`
-      <tr>
-        <td>${a.name}</td>
-        <td>${a.price.toFixed(2)}</td>
-        <td>${a.owned}</td>
-        <td><button onclick="buy(${i})">Buy</button></td>
-        <td><button onclick="sell(${i})">Sell</button></td>
-      </tr>`;
-  });
-}
-
-// Update infoCredits span on top
-function updateInfoCredits(){
-  let el=document.getElementById('infoCredits');
-  if(el) el.textContent=balance.toFixed(2);
-}
-
-// Buy & sell
-window.buy=i=>{
-  let a=assets[i];
-  if(balance>=a.price){
-    balance-=a.price; a.owned+=1;
-    saveUserData(); updateUI(); updateInfoCredits();
-  } else alert("Not enough credits!");
-}
-window.sell=i=>{
-  let a=assets[i];
-  if(a.owned>0){
-    a.owned-=1; balance+=a.price;
-    saveUserData(); updateUI(); updateInfoCredits();
-  } else alert("You don't own this asset!");
-}
-</script>
 </body>
 </html>
