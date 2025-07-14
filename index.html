@@ -912,5 +912,109 @@ window.open('rules.html', '_blank'); // Opens 'rules.html' in a new tab/window
 
 </script>
 <button onclick="openMoreOptions()" style="display:none; margin: 10px auto; display: block; max-width: 400px; padding: 12px; border-radius: 30px; background: rgba(255,255,255,0.1); color: blue; border: 1px solid rgba(255,255,255,0.3);" id="openMoreButton">Open More</button>
+<button onclick="document.getElementById('gameSection').style.display='block'; loadGameBalance();">Open Investment Game</button>
+
+<div id="gameSection" style="display:none;">
+  <h2>📈 Business Empire</h2>
+  <p>Your credits: <span id="balance">0</span></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Asset</th>
+        <th>Price</th>
+        <th>You Own</th>
+        <th>Buy</th>
+        <th>Sell</th>
+      </tr>
+    </thead>
+    <tbody id="assets"></tbody>
+  </table>
+</div>
+
+<style>
+  table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+  th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+  button { padding: 4px 8px; }
+</style>
+
+<script>
+  let assets = [
+    { name: "Tech Co", price: 100, owned: 0 },
+    { name: "Real Estate Fund", price: 200, owned: 0 },
+    { name: "Shipping Ltd", price: 50, owned: 0 },
+    { name: "AI Startup", price: 80, owned: 0 },
+    { name: "Green Energy", price: 120, owned: 0 },
+    { name: "Retail Chain", price: 70, owned: 0 },
+    { name: "Crypto Fund", price: 60, owned: 0 }
+  ];
+  let balance = 0;
+
+  function loadGameBalance() {
+    // Read credits from infoCredits span
+    let creditsSpan = document.getElementById('infoCredits');
+    if (creditsSpan) {
+      balance = parseFloat(creditsSpan.textContent) || 0;
+      updateUI();
+    }
+  }
+
+  function updateUI() {
+    document.getElementById("balance").textContent = balance.toFixed(2);
+    let tbody = document.getElementById("assets");
+    tbody.innerHTML = "";
+    assets.forEach((asset, i) => {
+      let row = `<tr>
+        <td>${asset.name}</td>
+        <td>${asset.price.toFixed(2)}</td>
+        <td>${asset.owned}</td>
+        <td><button onclick="buy(${i})">Buy</button></td>
+        <td><button onclick="sell(${i})">Sell</button></td>
+      </tr>`;
+      tbody.innerHTML += row;
+    });
+  }
+
+  function buy(index) {
+    let asset = assets[index];
+    if (balance >= asset.price) {
+      balance -= asset.price;
+      asset.owned += 1;
+      updateInfoCredits();
+      updateUI();
+    } else {
+      alert("Not enough credits!");
+    }
+  }
+
+  function sell(index) {
+    let asset = assets[index];
+    if (asset.owned > 0) {
+      asset.owned -= 1;
+      balance += asset.price;
+      updateInfoCredits();
+      updateUI();
+    } else {
+      alert("You don't own this asset!");
+    }
+  }
+
+  function updateInfoCredits() {
+    let creditsSpan = document.getElementById('infoCredits');
+    if (creditsSpan) {
+      creditsSpan.textContent = balance.toFixed(2);
+    }
+  }
+
+  function updatePrices() {
+    assets.forEach(asset => {
+      let change = (Math.random() - 0.5) * 10; // -5 to +5
+      asset.price = Math.max(1, asset.price + change);
+    });
+    updateUI();
+  }
+
+  // Update prices every minute
+  setInterval(updatePrices, 60000);
+</script>
 </body>
 </html>
