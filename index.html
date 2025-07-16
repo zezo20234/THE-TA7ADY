@@ -936,11 +936,10 @@ html5QrCode.stop().then(() => {
 </script>
 
 <script>
-// Function to decrease days by 1 at midnight
+// Function to decrease days by 1 at midnight if user has days > 0
 function setupDailyDaysDecrement() {
   const now = new Date();
   const millisTillMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0, 0) - now;
-
   setTimeout(function() {
     decrementDays();
     setInterval(decrementDays, 24 * 60 * 60 * 1000);
@@ -951,7 +950,6 @@ function decrementDays() {
   if (currentUserData && currentUserData.days > 0) {
     const userRef = ref(database, 'users/' + currentUser);
     const newDays = currentUserData.days - 1;
-
     update(userRef, { days: newDays }).then(() => {
       currentUserData.days = newDays;
       document.getElementById("infoDays").textContent = newDays;
@@ -962,157 +960,158 @@ function decrementDays() {
   }
 }
 
-// Call this after login and data loaded
 setupDailyDaysDecrement();
 </script>
 
+<script>
+// Function to open the rules page
+function openRules() {
+  window.open('rules.html', '_blank');
+}
+</script>
+
+<button onclick="openMoreOptions()" style="display:none; margin: 10px auto; display: block; max-width: 400px; padding: 12px; border-radius: 30px; background: rgba(255,255,255,0.1); color: blue; border: 1px solid rgba(255,255,255,0.3);" id="openMoreButton">Open More</button>
+
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getDatabase, ref, get, set, update, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, get, set, update, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyAdmiUcQ_yZDL4Gg0r93HjqzPYQ6N-gzM8",
-    authDomain: "the-challenge-fa9b2.firebaseapp.com",
-    databaseURL: "https://the-challenge-fa9b2-default-rtdb.firebaseio.com",
-    projectId: "the-challenge-fa9b2",
-    storageBucket: "the-challenge-fa9b2.appspot.com",
-    messagingSenderId: "4102830619",
-    appId: "1:4102830619:web:581e033f36ec02708916be"
-  };
+const firebaseConfig = {
+  apiKey: "AIzaSyAdmiUcQ_yZDL4Gg0r93HjqzPYQ6N-gzM8",
+  authDomain: "the-challenge-fa9b2.firebaseapp.com",
+  databaseURL: "https://the-challenge-fa9b2-default-rtdb.firebaseio.com",
+  projectId: "the-challenge-fa9b2",
+  storageBucket: "the-challenge-fa9b2.appspot.com",
+  messagingSenderId: "4102830619",
+  appId: "1:4102830619:web:581e033f36ec02708916be"
+};
 
-  const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
 
-  let currentUser = localStorage.getItem("savedUser") || "zezo"; 
-  let balance = 0;
+let currentUser = localStorage.getItem("savedUser") || "zezo"; 
+let balance = 0;
 
-  const assets = [
-    { name: "Boeing", price: 300, prevPrice: 300, owned: 0 },
-    { name: "McDonald's", price: 280, prevPrice: 280, owned: 0 },
-    { name: "Apple", price: 450, prevPrice: 450, owned: 0 },
-    { name: "Tesla", price: 700, prevPrice: 700, owned: 0 },
-    { name: "Google", price: 350, prevPrice: 350, owned: 0 },
-    { name: "Amazon", price: 400, prevPrice: 400, owned: 0 },
-    { name: "Meta", price: 320, prevPrice: 320, owned: 0 }
-  ];
+const assets = [
+  { name: "Boeing", price: 300, owned: 0 },
+  { name: "McDonald's", price: 280, owned: 0 },
+  { name: "Apple", price: 450, owned: 0 },
+  { name: "Tesla", price: 700, owned: 0 },
+  { name: "Google", price: 350, owned: 0 },
+  { name: "Amazon", price: 400, owned: 0 },
+  { name: "Meta", price: 320, owned: 0 }
+];
 
-  // Hot hours e.g. Sunday (0): 12,13,14
-  const hotHours = {
-    0: [12,13,14],
-    1: [15,16],
-    2: [10,11],
-    3: [17,18],
-    4: [14,15],
-    5: [12,13],
-    6: [16,17]
-  };
+// Hot hours e.g. Sunday (0): 12,13,14
+const hotHours = {
+  0: [12,13,14],
+  1: [15,16],
+  2: [10,11],
+  3: [17,18],
+  4: [14,15],
+  5: [12,13],
+  6: [16,17]
+};
 
-  function loadUserData(){
-    get(ref(db, 'users/' + currentUser)).then(snap=>{
-      if(snap.exists()){
-        const data = snap.val();
-        balance = data.credits ?? 5000;
-        if(data.assets) data.assets.forEach((owned,i)=>assets[i].owned=owned);
-      } else {
-        balance = 5000;
-        saveUserData();
-      }
-      updateUI();
-    });
-  }
-
-  function saveUserData(){
-    set(ref(db, 'users/' + currentUser), {
-      credits: balance,
-      assets: assets.map(a=>a.owned)
-    });
-  }
-
-  // Shared prices in global/prices
-  function savePrices(){
-    set(ref(db, 'global/prices'), assets.map(a=>a.price));
-  }
-
-  // Update prices every minute (only main user, e.g. zezo, does this)
-  if(currentUser === "zezo"){
-    setInterval(()=>{
-      const now = new Date();
-      const hot = hotHours[now.getDay()]?.includes(now.getHours());
-      assets.forEach(a=>{
-        a.prevPrice = a.price;
-        let change = hot ? (Math.random()-0.5)*40 : (Math.random()-0.5)*10;
-        a.price = Math.max(1, a.price + change);
-      });
-      savePrices();
-      updateUI();
-    },60000);
-  }
-
-  // Listen to shared prices
-  onValue(ref(db, 'global/prices'), snap=>{
-    const prices = snap.val();
-    if(prices) {
-      prices.forEach((p,i)=>{
-        assets[i].prevPrice = assets[i].price;
-        assets[i].price = p;
-      });
-      updateUI();
+function loadUserData(){
+  get(ref(db, 'users/' + currentUser)).then(snap=>{
+    if(snap.exists()){
+      const data = snap.val();
+      balance = data.credits ?? 5000;
+      if(data.assets) data.assets.forEach((owned,i)=>assets[i].owned=owned);
+    } else {
+      balance = 5000;
+      saveUserData();
     }
+    updateUI();
   });
+}
 
-  function formatChange(change){
-    const rounded = Math.round(change);
-    return (rounded >= 0 ? "+" : "") + rounded;
+function saveUserData(){
+  set(ref(db, 'users/' + currentUser), {
+    credits: balance,
+    assets: assets.map(a=>a.owned)
+  });
+}
+
+// Shared prices
+function savePrices(){
+  set(ref(db, 'global/prices'), assets.map(a=>a.price));
+}
+
+// Update prices every minute (only one user e.g. zezo)
+if(currentUser === "zezo"){
+  setInterval(()=>{
+    const now = new Date();
+    const hot = hotHours[now.getDay()]?.includes(now.getHours());
+    assets.forEach(a=>{
+      a.prevPrice = a.price || a.price;
+      let change = hot ? (Math.random() - 0.5) * 120 : (Math.random() - 0.5) * 100;
+      a.price = Math.max(1, a.price + change);
+    });
+    savePrices();
+    updateUI();
+  },60000);
+}
+
+// Listen to shared prices
+onValue(ref(db, 'global/prices'), snap=>{
+  const prices = snap.val();
+  if(prices) {
+    prices.forEach((p,i)=>{
+      assets[i].prevPrice = assets[i].price;
+      assets[i].price = p;
+    });
+    updateUI();
   }
+});
 
-  function formatPercentChange(price, prevPrice){
-    if(prevPrice === 0) return "0%";
-    const percent = ((price - prevPrice) / prevPrice) * 100;
-    return (percent >= 0 ? "+" : "") + percent.toFixed(1) + "%";
+function updateUI(){
+  const el = document.getElementById("infoCredits");
+  if(el) el.textContent = Math.round(balance);
+  const tbody = document.getElementById("assetsTableBody");
+  if(tbody){
+    tbody.innerHTML = "";
+    assets.forEach((a,i)=>{
+      let percent = 0;
+      if(a.prevPrice && a.prevPrice !== 0){
+        percent = ((a.price - a.prevPrice) / a.prevPrice) * 100;
+      }
+      const percentText = (percent>0?"+":"") + percent.toFixed(1) + "%";
+      tbody.innerHTML += `
+      <tr>
+        <td>${a.name}</td>
+        <td>${Math.round(a.price)}</td>
+        <td>${a.owned}</td>
+        <td>${percentText}</td>
+        <td><button onclick="buy(${i})">Buy</button></td>
+        <td><button onclick="sell(${i})">Sell</button></td>
+      </tr>`;
+    });
   }
+}
 
-  function updateUI(){
-    const el = document.getElementById("infoCredits");
-    if(el) el.textContent = Math.round(balance);
-    const tbody = document.getElementById("assetsTableBody");
-    if(tbody){
-      tbody.innerHTML = "";
-      assets.forEach((a,i)=>{
-        tbody.innerHTML += `
-        <tr>
-          <td>${a.name}</td>
-          <td>${Math.round(a.price)}</td>
-          <td>${a.owned}</td>
-          <td>${formatChange(a.price - a.prevPrice)} (${formatPercentChange(a.price, a.prevPrice)})</td>
-          <td><button onclick="buy(${i})">Buy</button></td>
-          <td><button onclick="sell(${i})">Sell</button></td>
-        </tr>`;
-      });
-    }
-  }
+window.buy = function(i){
+  const a=assets[i];
+  if(balance>=a.price){
+    balance -= a.price;
+    a.owned+=1;
+    saveUserData();
+    updateUI();
+  }else alert("Not enough credits!");
+};
 
-  window.buy = function(i){
-    const a=assets[i];
-    if(balance>=a.price){
-      balance -= a.price;
-      a.owned+=1;
-      saveUserData();
-      updateUI();
-    }else alert("Not enough credits!");
-  };
+window.sell = function(i){
+  const a=assets[i];
+  if(a.owned>0){
+    a.owned-=1;
+    balance += a.price;
+    saveUserData();
+    updateUI();
+  }else alert("You don't own this asset!");
+};
 
-  window.sell = function(i){
-    const a=assets[i];
-    if(a.owned>0){
-      a.owned-=1;
-      balance += a.price;
-      saveUserData();
-      updateUI();
-    }else alert("You don't own this asset!");
-  };
-
-  // Load at start
-  loadUserData();
+loadUserData();
 </script>
 
 <!-- Button & table -->
@@ -1132,6 +1131,6 @@ setupDailyDaysDecrement();
     <tbody id="assetsTableBody"></tbody>
   </table>
 </div>
-
+    
 </body>
 </html>
