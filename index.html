@@ -1005,13 +1005,13 @@ window.open('rules.html', '_blank'); // Opens 'rules.html' in a new tab/window
   let balance = 0;
 
   const assets = [
-    { name: "Boeing", price: 300, owned: 0 },
-    { name: "McDonald's", price: 280, owned: 0 },
-    { name: "Apple", price: 450, owned: 0 },
-    { name: "Tesla", price: 700, owned: 0 },
-    { name: "Google", price: 350, owned: 0 },
-    { name: "Amazon", price: 400, owned: 0 },
-    { name: "Meta", price: 320, owned: 0 }
+    { name: "Boeing", price: 300, previousPrice: 300, owned: 0 },
+    { name: "McDonald's", price: 280, previousPrice: 280, owned: 0 },
+    { name: "Apple", price: 450, previousPrice: 450, owned: 0 },
+    { name: "Tesla", price: 700, previousPrice: 700, owned: 0 },
+    { name: "Google", price: 350, previousPrice: 350, owned: 0 },
+    { name: "Amazon", price: 400, previousPrice: 400, owned: 0 },
+    { name: "Meta", price: 320, previousPrice: 320, owned: 0 }
   ];
 
   // Hot hours e.g. Sunday (0): 12,13,14
@@ -1030,7 +1030,11 @@ window.open('rules.html', '_blank'); // Opens 'rules.html' in a new tab/window
       if(snap.exists()){
         const data = snap.val();
         balance = data.credits ?? 5000;
-        if(data.assets) data.assets.forEach((owned,i)=>assets[i].owned=owned);
+        if(data.assets) data.assets.forEach((owned,i)=>{
+          assets[i].owned=owned;
+          // When loading, set previousPrice to current price initially
+          assets[i].previousPrice = assets[i].price; 
+        });
       } else {
         balance = 5000;
         saveUserData();
@@ -1048,7 +1052,8 @@ window.open('rules.html', '_blank'); // Opens 'rules.html' in a new tab/window
 
   // Shared prices in global/prices
   function savePrices(){
-    set(ref(db, 'global/prices'), assets.map(a=>a.price));
+    // Save both current price and previous price
+    set(ref(db, 'global/prices'), assets.map(a=>({ price: a.price, previousPrice: a.previousPrice })));
   }
 
   // Update prices every minute (only one user, e.g. zezo, does this)
@@ -1056,22 +1061,31 @@ window.open('rules.html', '_blank'); // Opens 'rules.html' in a new tab/window
     setInterval(()=>{
       const now = new Date();
       const hot = hotHours[now.getDay()]?.includes(now.getHours());
+      
       assets.forEach(a=>{
+        a.previousPrice = a.price; // Store current price as previousPrice before updating
+
         let change;
-        if (hot) {
-          // In hot hours, more ups, aiming for 150-200
-          change = Math.random() * 15 + 5; // Ensures a positive change, biasing towards higher values
-        } else {
-          // Normal hours, more downs, aiming for 50-100
-          change = (Math.random() - 0.6) * 10; // Biases towards negative change
-        }
-        a.price = Math.max(1, a.price + change); // Ensure price doesn't go below 1
+        const roll = Math.random(); // Decide if it's an up or down movement
         
-        // Clamp prices within desired ranges, while still allowing fluctuations
-        if (hot && a.price > 200) a.price = 200 - (Math.random() * 5); // Gently bring down if too high in hot
-        if (hot && a.price < 150) a.price = 150 + (Math.random() * 5); // Gently bring up if too low in hot
-        if (!hot && a.price > 100) a.price = 100 - (Math.random() * 5); // Gently bring down if too high in normal
-        if (!hot && a.price < 50) a.price = 50 + (Math.random() * 5); // Gently bring up if too low in normal
+        if (hot) {
+            // In hot hours, more ups (100-150)
+            // Still allow some downs, but ups are more frequent
+            if (roll < 0.7) { // 70% chance of going up
+                change = Math.random() * 50 + 100; // between 100 and 150
+            } else { // 30% chance of going down
+                change = -(Math.random() * 50 + 50); // between -50 and -100
+            }
+        } else {
+            // Normal hours, more downs (-50 to -100)
+            if (roll < 0.4) { // 40% chance of going up
+                change = Math.random() * 50 + 100; // between 100 and 150
+            } else { // 60% chance of going down
+                change = -(Math.random() * 50 + 50); // between -50 and -100
+            }
+        }
+        
+        a.price = Math.max(1, a.price + change); // Ensure price doesn't go below 1
       });
       savePrices();
       updateUI();
@@ -1080,9 +1094,12 @@ window.open('rules.html', '_blank'); // Opens 'rules.html' in a new tab/window
 
   // Listen to shared prices
   onValue(ref(db, 'global/prices'), snap=>{
-    const prices = snap.val();
-    if(prices) {
-      prices.forEach((p,i)=>assets[i].price=p);
+    const pricesData = snap.val();
+    if(pricesData) {
+      pricesData.forEach((data,i)=>{
+        assets[i].price=data.price;
+        assets[i].previousPrice=data.previousPrice;
+      });
       updateUI();
     }
   });
@@ -1096,10 +1113,22 @@ window.open('rules.html', '_blank'); // Opens 'rules.html' in a new tab/window
     if(tbody){
       tbody.innerHTML = "";
       assets.forEach((a,i)=>{
+        const priceChange = a.price - a.previousPrice;
+        let changeText = "";
+        let changeClass = ""; // For potential styling
+
+        if (priceChange > 0) {
+          changeText = ` (+$${Math.round(priceChange)})`;
+          changeClass = "price-up";
+        } else if (priceChange < 0) {
+          changeText = ` (-$${Math.round(Math.abs(priceChange))})`;
+          changeClass = "price-down";
+        }
+
         tbody.innerHTML += `
         <tr>
           <td>${a.name}</td>
-          <td>${Math.round(a.price)}</td>
+          <td>${Math.round(a.price)}<span class="${changeClass}">${changeText}</span></td>
           <td>${a.owned}</td>
           <td><button onclick="buy(${i})">Buy</button></td>
           <td><button onclick="sell(${i})">Sell</button></td>
@@ -1132,6 +1161,18 @@ window.open('rules.html', '_blank'); // Opens 'rules.html' in a new tab/window
   loadUserData();
 </script>
 
+<style>
+/* Basic styling for price change indicators */
+.price-up {
+  color: green;
+  font-weight: bold;
+}
+.price-down {
+  color: red;
+  font-weight: bold;
+}
+</style>
+
 ---
 
 ### Investment Box
@@ -1145,6 +1186,7 @@ window.open('rules.html', '_blank'); // Opens 'rules.html' in a new tab/window
     <tbody id="assetsTableBody"></tbody>
   </table>
 </div>
+
 
 </body>
 </html>
