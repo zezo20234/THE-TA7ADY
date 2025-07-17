@@ -983,6 +983,46 @@ window.open('rules.html', '_blank'); // Opens 'rules.html' in a new tab/window
 }
 </script>
 <button onclick="openMoreOptions()" style="display:none; margin: 10px auto; display: block; max-width: 400px; padding: 12px; border-radius: 30px; background: rgba(255,255,255,0.1); color: blue; border: 1px solid rgba(255,255,255,0.3);" id="openMoreButton">Open More</button>
+
+<script>
+// Function to decrease days by 1 at midnight if user has days > 0
+function setupDailyDaysDecrement() {
+const now = new Date();
+const millisTillMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0, 0) - now;
+
+setTimeout(function() {
+decrementDays();
+
+// Then set interval to run every 24h afterwards
+setInterval(decrementDays, 24 * 60 * 60 * 1000);
+}, millisTillMidnight);
+}
+
+function decrementDays() {
+if (currentUserData && currentUserData.days > 0) {
+const userRef = ref(database, 'users/' + currentUser);
+const newDays = currentUserData.days - 1;
+
+update(userRef, { days: newDays }).then(() => {
+currentUserData.days = newDays;
+document.getElementById("infoDays").textContent = newDays;
+console.log("Days decremented by 1 at midnight.");
+}).catch(err => {
+console.error("Error decrementing days:", err);
+});
+}
+}
+
+// Call this function after login and data loaded
+setupDailyDaysDecrement();
+</script>
+<script>
+// Function to open the rules page
+function openRules() {
+window.open('rules.html', '_blank'); // Opens 'rules.html' in a new tab/window
+}
+</script>
+<button onclick="openMoreOptions()" style="display:none; margin: 10px auto; display: block; max-width: 400px; padding: 12px; border-radius: 30px; background: rgba(255,255,255,0.1); color: blue; border: 1px solid rgba(255,255,255,0.3);" id="openMoreButton">Open More</button>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getDatabase, ref, get, set, update, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
@@ -1069,19 +1109,19 @@ window.open('rules.html', '_blank'); // Opens 'rules.html' in a new tab/window
         const roll = Math.random(); // Decide if it's an up or down movement
         
         if (hot) {
-            // In hot hours, more ups (100-150)
-            // Still allow some downs, but ups are more frequent
+            // In hot hours, more ups (50-100)
+            // Still allow some downs (-20 to -50), but ups are more frequent
             if (roll < 0.7) { // 70% chance of going up
-                change = Math.random() * 50 + 100; // between 100 and 150
+                change = Math.random() * 50 + 50; // between 50 and 100
             } else { // 30% chance of going down
-                change = -(Math.random() * 50 + 50); // between -50 and -100
+                change = -(Math.random() * 30 + 20); // between -20 and -50
             }
         } else {
-            // Normal hours, more downs (-50 to -100)
+            // Normal hours, more downs (-20 to -50)
             if (roll < 0.4) { // 40% chance of going up
-                change = Math.random() * 50 + 100; // between 100 and 150
+                change = Math.random() * 50 + 50; // between 50 and 100
             } else { // 60% chance of going down
-                change = -(Math.random() * 50 + 50); // between -50 and -100
+                change = -(Math.random() * 30 + 20); // between -20 and -50
             }
         }
         
