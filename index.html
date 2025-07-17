@@ -1111,6 +1111,42 @@ window.sell = function(i){
 // Load data at start
 loadUserData();
 </script>
-<button onclick="openMoreOptions()">Open More</button>
+<!-- Toggle Button -->
+<button onclick="toggleMoreOptions()" 
+  style="margin: 10px auto; display: block; max-width: 400px; padding: 12px; border-radius: 30px; background: rgba(255,255,255,0.1); color: blue; border: 1px solid rgba(255,255,255,0.3);" 
+  id="openMoreButton">
+  Open More
+</button>
+
+<!-- Hidden Sections -->
+<div id="creditCodeBox" style="display: none; margin-top: 20px;">
+  <h3>Create Credit Code</h3>
+  <input type="number" id="createCodeAmount" placeholder="Enter amount">
+  <button onclick="generateCreditCode()">Generate Code</button>
+  <div id="qrcodeContainer" style="margin-top: 10px;"></div>
+</div>
+
+<div id="selfEditArea" style="display: none; margin-top: 20px;">
+  <h3>Profile Options</h3>
+  <!-- Put your own user settings here -->
+  <p>You can add more options inside this area.</p>
+</div>
+
+<!-- JavaScript Toggle Function -->
+<script>
+  window.toggleMoreOptions = function () {
+    const creditCodeBox = document.getElementById("creditCodeBox");
+    const selfEditArea = document.getElementById("selfEditArea");
+    const isVisible = creditCodeBox?.style.display === "block";
+
+    // Toggle visibility
+    if (creditCodeBox) creditCodeBox.style.display = isVisible ? "none" : "block";
+    if (selfEditArea) selfEditArea.style.display = isVisible ? "none" : "block";
+
+    // Update button text
+    const btn = document.getElementById("openMoreButton");
+    if (btn) btn.textContent = isVisible ? "Open More" : "Close More";
+  };
+</script>
 </body>
 </html>
