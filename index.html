@@ -1070,16 +1070,31 @@ window.open('rules.html', '_blank'); // Opens 'rules.html' in a new tab/window
       if(snap.exists()){
         const data = snap.val();
         balance = data.credits ?? 5000;
-        if(data.assets) data.assets.forEach((owned,i)=>{
-          assets[i].owned=owned;
-          // When loading, set previousPrice to current price initially
-          assets[i].previousPrice = assets[i].price; 
-        });
+        if(data.assets) {
+          data.assets.forEach((owned,i)=>{
+            if (assets[i]) { // Ensure asset exists
+                assets[i].owned = owned;
+                // When loading, ensure price is a number, default if not
+                assets[i].price = typeof assets[i].price === 'number' && !isNaN(assets[i].price) ? assets[i].price : 300; // Default price if corrupted
+                assets[i].previousPrice = typeof assets[i].previousPrice === 'number' && !isNaN(assets[i].previousPrice) ? assets[i].previousPrice : assets[i].price;
+            }
+          });
+        }
       } else {
         balance = 5000;
         saveUserData();
       }
       updateUI();
+    }).catch(err => {
+        console.error("Error loading user data:", err);
+        // Fallback in case of error
+        balance = 5000;
+        assets.forEach(a => {
+            a.owned = 0;
+            a.price = 300; // Reset to default
+            a.previousPrice = 300; // Reset to default
+        });
+        updateUI();
     });
   }
 
@@ -1087,13 +1102,18 @@ window.open('rules.html', '_blank'); // Opens 'rules.html' in a new tab/window
     set(ref(db, 'users/' + currentUser), {
       credits: balance,
       assets: assets.map(a=>a.owned)
+    }).catch(err => {
+        console.error("Error saving user data:", err);
     });
   }
 
   // Shared prices in global/prices
   function savePrices(){
     // Save both current price and previous price
-    set(ref(db, 'global/prices'), assets.map(a=>({ price: a.price, previousPrice: a.previousPrice })));
+    set(ref(db, 'global/prices'), assets.map(a=>({ price: a.price, previousPrice: a.previousPrice })))
+    .catch(err => {
+        console.error("Error saving prices:", err);
+    });
   }
 
   // Update prices every minute (only one user, e.g. zezo, does this)
@@ -1103,6 +1123,12 @@ window.open('rules.html', '_blank'); // Opens 'rules.html' in a new tab/window
       const hot = hotHours[now.getDay()]?.includes(now.getHours());
       
       assets.forEach(a=>{
+        // Ensure current price is a number before using it
+        if (typeof a.price !== 'number' || isNaN(a.price)) {
+            console.warn(`Price for ${a.name} was NaN or not a number. Resetting to 300.`);
+            a.price = 300; // Reset to a known good value
+        }
+
         a.previousPrice = a.price; // Store current price as previousPrice before updating
 
         let change;
@@ -1110,7 +1136,6 @@ window.open('rules.html', '_blank'); // Opens 'rules.html' in a new tab/window
         
         if (hot) {
             // In hot hours, more ups (50-100)
-            // Still allow some downs (-20 to -50), but ups are more frequent
             if (roll < 0.7) { // 70% chance of going up
                 change = Math.random() * 50 + 50; // between 50 and 100
             } else { // 30% chance of going down
@@ -1126,6 +1151,12 @@ window.open('rules.html', '_blank'); // Opens 'rules.html' in a new tab/window
         }
         
         a.price = Math.max(1, a.price + change); // Ensure price doesn't go below 1
+        
+        // Final check to ensure price is not NaN after calculation
+        if (isNaN(a.price)) {
+            console.error(`Price for ${a.name} became NaN after calculation. Resetting.`);
+            a.price = 300; // Fallback to default if it becomes NaN
+        }
       });
       savePrices();
       updateUI();
@@ -1137,11 +1168,21 @@ window.open('rules.html', '_blank'); // Opens 'rules.html' in a new tab/window
     const pricesData = snap.val();
     if(pricesData) {
       pricesData.forEach((data,i)=>{
-        assets[i].price=data.price;
-        assets[i].previousPrice=data.previousPrice;
+        if (assets[i]) { // Ensure asset exists
+            // Validate data coming from Firebase before assignment
+            assets[i].price = typeof data.price === 'number' && !isNaN(data.price) ? data.price : assets[i].price;
+            assets[i].previousPrice = typeof data.previousPrice === 'number' && !isNaN(data.previousPrice) ? data.previousPrice : assets[i].price; // Fallback to current if previous is bad
+        }
       });
       updateUI();
+    } else {
+        console.warn("No global prices data found, prices might be reset or initialized.");
+        // Optional: Re-initialize prices if no data exists, if desired
+        // assets.forEach(a => { a.price = 300; a.previousPrice = 300; });
+        // savePrices();
     }
+  }, (error) => {
+      console.error("Error listening to global prices:", error);
   });
 
   function updateUI(){
@@ -1153,7 +1194,11 @@ window.open('rules.html', '_blank'); // Opens 'rules.html' in a new tab/window
     if(tbody){
       tbody.innerHTML = "";
       assets.forEach((a,i)=>{
-        const priceChange = a.price - a.previousPrice;
+        // Ensure both current and previous prices are numbers for calculation
+        const currentP = typeof a.price === 'number' && !isNaN(a.price) ? a.price : 0;
+        const prevP = typeof a.previousPrice === 'number' && !isNaN(a.previousPrice) ? a.previousPrice : currentP; // Default to current if previous is bad
+
+        const priceChange = currentP - prevP;
         let changeText = "";
         let changeClass = ""; // For potential styling
 
@@ -1168,7 +1213,7 @@ window.open('rules.html', '_blank'); // Opens 'rules.html' in a new tab/window
         tbody.innerHTML += `
         <tr>
           <td>${a.name}</td>
-          <td>${Math.round(a.price)}<span class="${changeClass}">${changeText}</span></td>
+          <td>${Math.round(currentP)}<span class="${changeClass}">${changeText}</span></td>
           <td>${a.owned}</td>
           <td><button onclick="buy(${i})">Buy</button></td>
           <td><button onclick="sell(${i})">Sell</button></td>
@@ -1226,6 +1271,7 @@ window.open('rules.html', '_blank'); // Opens 'rules.html' in a new tab/window
     <tbody id="assetsTableBody"></tbody>
   </table>
 </div>
+
 
 
 </body>
