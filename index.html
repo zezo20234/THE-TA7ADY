@@ -802,12 +802,19 @@ window.generateCreditCode = async function() {
     expiresAt: Date.now() + (24 * 60 * 60 * 1000) // Expires in 24 hours
   };
 
-  const senderNewCredits = currentUserData.credits - Math.abs(amountToCode);
-
-  // Use atomic update to deduct credits and create the code simultaneously
   const updates = {};
+if (amountToCode > 0) {
+  // Deduct if sending credits
+  const senderNewCredits = currentUserData.credits - amountToCode;
   updates['/users/' + currentUser + '/credits'] = senderNewCredits;
-  updates['/creditCodes/' + newCode] = codeData;
+  currentUserData.credits = senderNewCredits;
+  document.getElementById("infoCredits").textContent = senderNewCredits;
+} else {
+  // No deduction when expecting to receive credits
+  alert("Code created. You will receive credits when it's redeemed.");
+}
+
+updates['/creditCodes/' + newCode] = codeData;
 
   try {
     await update(ref(database), updates);
@@ -861,11 +868,26 @@ window.redeemCreditCode = async function(codeToRedeemParam = null) { // Added pa
     let newCredits = currentUserData.credits ?? 0;
 
     if (codeAmount > 0) {
-      // Add credits only if positive
-      newCredits += codeAmount;
-    } else {
-      // Negative amount: no credits added to redeemer
-      alert("This code was a payment or deduction. No credits added to your account.");
+  // Positive code: gain credits
+  newCredits += codeAmount;
+} else {
+  // Negative code: deduct from redeemer
+  if (newCredits < Math.abs(codeAmount)) {
+    alert("You don't have enough credits to pay this code.");
+    return;
+  }
+  newCredits += codeAmount; // subtract since codeAmount is negative
+
+  // Add the credits to the creator of the code
+  const receiverRef = ref(database, '/users/' + codeData.createdBy + '/credits');
+  const receiverSnap = await get(receiverRef);
+  const receiverData = receiverSnap.val();
+  const receiverCredits = (receiverData?.credits ?? 0) + Math.abs(codeAmount);
+
+  updates['/users/' + codeData.createdBy + '/credits'] = receiverCredits;
+
+  alert(`You paid ${Math.abs(codeAmount)} credits to ${codeData.createdBy}`);
+}
     }
 
     // Use atomic update for the current user's credits and to delete the code
