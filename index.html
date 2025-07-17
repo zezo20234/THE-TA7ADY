@@ -944,126 +944,6 @@ window.stopQrCodeScanner = function() {
 };
 
 </script>
-<script>
-// Function to decrease days by 1 at midnight if user has days > 0
-function setupDailyDaysDecrement() {
-const now = new Date();
-const millisTillMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0, 0) - now;
-
-setTimeout(function() {
-decrementDays();
-
-// Then set interval to run every 24h afterwards
-setInterval(decrementDays, 24 * 60 * 60 * 1000);
-}, millisTillMidnight);
-}
-
-function decrementDays() {
-if (currentUserData && currentUserData.days > 0) {
-const userRef = ref(database, 'users/' + currentUser);
-const newDays = currentUserData.days - 1;
-
-update(userRef, { days: newDays }).then(() => {
-currentUserData.days = newDays;
-document.getElementById("infoDays").textContent = newDays;
-console.log("Days decremented by 1 at midnight.");
-}).catch(err => {
-console.error("Error decrementing days:", err);
-});
-}
-}
-
-// Call this function after login and data loaded
-setupDailyDaysDecrement();
-</script>
-<script>
-// Function to open the rules page
-function openRules() {
-window.open('rules.html', '_blank'); // Opens 'rules.html' in a new tab/window
-}
-</script>
-<button onclick="openMoreOptions()" style="display:none; margin: 10px auto; display: block; max-width: 400px; padding: 12px; border-radius: 30px; background: rgba(255,255,255,0.1); color: blue; border: 1px solid rgba(255,255,255,0.3);" id="openMoreButton">Open More</button>
-
-<script>
-// Function to decrease days by 1 at midnight if user has days > 0
-function setupDailyDaysDecrement() {
-const now = new Date();
-const millisTillMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0, 0) - now;
-
-setTimeout(function() {
-decrementDays();
-
-// Then set interval to run every 24h afterwards
-setInterval(decrementDays, 24 * 60 * 60 * 1000);
-}, millisTillMidnight);
-}
-
-function decrementDays() {
-if (currentUserData && currentUserData.days > 0) {
-const userRef = ref(database, 'users/' + currentUser);
-const newDays = currentUserData.days - 1;
-
-update(userRef, { days: newDays }).then(() => {
-currentUserData.days = newDays;
-document.getElementById("infoDays").textContent = newDays;
-console.log("Days decremented by 1 at midnight.");
-}).catch(err => {
-console.error("Error decrementing days:", err);
-});
-}
-}
-
-// Call this function after login and data loaded
-setupDailyDaysDecrement();
-</script>
-<script>
-// Function to open the rules page
-function openRules() {
-window.open('rules.html', '_blank'); // Opens 'rules.html' in a new tab/window
-}
-</script>
-<button onclick="openMoreOptions()" style="display:none; margin: 10px auto; display: block; max-width: 400px; padding: 12px; border-radius: 30px; background: rgba(255,255,255,0.1); color: blue; border: 1px solid rgba(255,255,255,0.3);" id="openMoreButton">Open More</button>
-
-Also keep me the hot hours 
-<script>
-// Function to decrease days by 1 at midnight if user has days > 0
-function setupDailyDaysDecrement() {
-const now = new Date();
-const millisTillMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0, 0) - now;
-
-setTimeout(function() {
-decrementDays();
-
-// Then set interval to run every 24h afterwards
-setInterval(decrementDays, 24 * 60 * 60 * 1000);
-}, millisTillMidnight);
-}
-
-function decrementDays() {
-if (currentUserData && currentUserData.days > 0) {
-const userRef = ref(database, 'users/' + currentUser);
-const newDays = currentUserData.days - 1;
-
-update(userRef, { days: newDays }).then(() => {
-currentUserData.days = newDays;
-document.getElementById("infoDays").textContent = newDays;
-console.log("Days decremented by 1 at midnight.");
-}).catch(err => {
-console.error("Error decrementing days:", err);
-});
-}
-}
-
-// Call this function after login and data loaded
-setupDailyDaysDecrement();
-</script>
-<script>
-// Function to open the rules page
-function openRules() {
-window.open('rules.html', '_blank'); // Opens 'rules.html' in a new tab/window
-}
-</script>
-<button onclick="openMoreOptions()" style="display:none; margin: 10px auto; display: block; max-width: 400px; padding: 12px; border-radius: 30px; background: rgba(255,255,255,0.1); color: blue; border: 1px solid rgba(255,255,255,0.3);" id="openMoreButton">Open More</button>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getDatabase, ref, get, set, update, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
@@ -1081,7 +961,6 @@ window.open('rules.html', '_blank'); // Opens 'rules.html' in a new tab/window
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
 
-  // Change this when user logs in
   let currentUser = localStorage.getItem("savedUser") || "zezo"; 
   let balance = 0;
 
@@ -1095,7 +974,6 @@ window.open('rules.html', '_blank'); // Opens 'rules.html' in a new tab/window
     { name: "Meta", price: 320, owned: 0 }
   ];
 
-  // Hot hours e.g. Sunday (0): 12,13,14
   const hotHours = {
     0: [12,13,14],
     1: [15,16],
@@ -1127,48 +1005,74 @@ window.open('rules.html', '_blank'); // Opens 'rules.html' in a new tab/window
     });
   }
 
-  // Shared prices in global/prices
   function savePrices(){
-    set(ref(db, 'global/prices'), assets.map(a=>a.price));
+    set(ref(db, 'global/prices'), assets.map(a => ({
+      price: a.price,
+      lastChange: a.lastChange || 0,
+      lastPercent: a.lastPercent || "0.00"
+    })));
   }
 
-  // Update prices every minute (only one user, e.g. zezo, does this)
   if(currentUser === "zezo"){
     setInterval(()=>{
       const now = new Date();
       const hot = hotHours[now.getDay()]?.includes(now.getHours());
-      assets.forEach(a=>{
-        let change=hot?Math.random()*20:(Math.random()-0.5)*10;
-        a.price = Math.max(1, a.price+change);
+
+      assets.forEach(a => {
+        const oldPrice = a.price;
+        let change = 0;
+        const goUp = Math.random() < 0.5;
+
+        if (goUp) {
+          change = hot
+            ? Math.floor(Math.random() * (250 - 150 + 1)) + 150
+            : Math.floor(Math.random() * (100 - 50 + 1)) + 50;
+          a.price += change;
+        } else {
+          change = hot
+            ? Math.floor(Math.random() * (40 - 20 + 1)) + 20
+            : Math.floor(Math.random() * (50 - 20 + 1)) + 20;
+          a.price = Math.max(1, a.price - change);
+          change = -change;
+        }
+
+        a.lastChange = change;
+        a.lastPercent = ((change / oldPrice) * 100).toFixed(2);
       });
+
       savePrices();
       updateUI();
-    },60000);
+    }, 60000);
   }
 
-  // Listen to shared prices
-  onValue(ref(db, 'global/prices'), snap=>{
+  onValue(ref(db, 'global/prices'), snap => {
     const prices = snap.val();
     if(prices) {
-      prices.forEach((p,i)=>assets[i].price=p);
+      prices.forEach((p, i) => {
+        assets[i].price = p.price;
+        assets[i].lastChange = p.lastChange || 0;
+        assets[i].lastPercent = p.lastPercent || "0.00";
+      });
       updateUI();
     }
   });
 
   function updateUI(){
-    // Update infoCredits
     const el = document.getElementById("infoCredits");
     if(el) el.textContent = Math.round(balance);
-    // Update table
+
     const tbody = document.getElementById("assetsTableBody");
     if(tbody){
       tbody.innerHTML = "";
       assets.forEach((a,i)=>{
+        const changeColor = a.lastChange > 0 ? "green" : (a.lastChange < 0 ? "red" : "gray");
         tbody.innerHTML += `
         <tr>
           <td>${a.name}</td>
           <td>${Math.round(a.price)}</td>
           <td>${a.owned}</td>
+          <td style="color:${changeColor}">${a.lastChange >= 0 ? "+" : ""}${a.lastChange}</td>
+          <td style="color:${changeColor}">${a.lastPercent}%</td>
           <td><button onclick="buy(${i})">Buy</button></td>
           <td><button onclick="sell(${i})">Sell</button></td>
         </tr>`;
@@ -1177,38 +1081,53 @@ window.open('rules.html', '_blank'); // Opens 'rules.html' in a new tab/window
   }
 
   window.buy = function(i){
-    const a=assets[i];
-    if(balance>=a.price){
+    const a = assets[i];
+    if(balance >= a.price){
       balance -= a.price;
-      a.owned+=1;
+      a.owned += 1;
       saveUserData();
       updateUI();
-    }else alert("Not enough credits!");
+    } else {
+      alert("Not enough credits!");
+    }
   };
 
   window.sell = function(i){
-    const a=assets[i];
-    if(a.owned>0){
-      a.owned-=1;
+    const a = assets[i];
+    if(a.owned > 0){
+      a.owned -= 1;
       balance += a.price;
       saveUserData();
       updateUI();
-    }else alert("You don't own this asset!");
+    } else {
+      alert("You don't own this asset!");
+    }
   };
 
-  // Load at start
   loadUserData();
 </script>
 
-<!-- Button & table -->
-<button onclick="document.getElementById('investBox').style.display='block'">Open Investment</button>
+<!-- UI -->
+<div style="margin:10px;">
+  <button onclick="document.getElementById('investBox').style.display='block'">Open Investment</button>
+  <div>Credits: <span id="infoCredits">Loading...</span></div>
+</div>
+
 <div id="investBox" style="display:none;">
   <table border="1">
     <thead>
-      <tr><th>Name</th><th>Price</th><th>Owned</th><th>Buy</th><th>Sell</th></tr>
+      <tr>
+        <th>Name</th>
+        <th>Price</th>
+        <th>Owned</th>
+        <th>Change</th>
+        <th>%</th>
+        <th>Buy</th>
+        <th>Sell</th>
+      </tr>
     </thead>
     <tbody id="assetsTableBody"></tbody>
-  </table>
+  </table>
 </div>
 
 </body>
