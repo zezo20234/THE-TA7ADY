@@ -944,6 +944,45 @@ window.stopQrCodeScanner = function() {
 };
 
 </script>
+<script>
+// Function to decrease days by 1 at midnight if user has days > 0
+function setupDailyDaysDecrement() {
+const now = new Date();
+const millisTillMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0, 0) - now;
+
+setTimeout(function() {
+decrementDays();
+
+// Then set interval to run every 24h afterwards
+setInterval(decrementDays, 24 * 60 * 60 * 1000);
+}, millisTillMidnight);
+}
+
+function decrementDays() {
+if (currentUserData && currentUserData.days > 0) {
+const userRef = ref(database, 'users/' + currentUser);
+const newDays = currentUserData.days - 1;
+
+update(userRef, { days: newDays }).then(() => {
+currentUserData.days = newDays;
+document.getElementById("infoDays").textContent = newDays;
+console.log("Days decremented by 1 at midnight.");
+}).catch(err => {
+console.error("Error decrementing days:", err);
+});
+}
+}
+
+// Call this function after login and data loaded
+setupDailyDaysDecrement();
+</script>
+<script>
+// Function to open the rules page
+function openRules() {
+window.open('rules.html', '_blank'); // Opens 'rules.html' in a new tab/window
+}
+</script>
+<button onclick="openMoreOptions()" style="display:none; margin: 10px auto; display: block; max-width: 400px; padding: 12px; border-radius: 30px; background: rgba(255,255,255,0.1); color: blue; border: 1px solid rgba(255,255,255,0.3);" id="openMoreButton">Open More</button>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getDatabase, ref, get, set, update, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
@@ -961,6 +1000,7 @@ window.stopQrCodeScanner = function() {
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
 
+  // Change this when user logs in
   let currentUser = localStorage.getItem("savedUser") || "zezo"; 
   let balance = 0;
 
@@ -974,6 +1014,7 @@ window.stopQrCodeScanner = function() {
     { name: "Meta", price: 320, owned: 0 }
   ];
 
+  // Hot hours e.g. Sunday (0): 12,13,14
   const hotHours = {
     0: [12,13,14],
     1: [15,16],
@@ -1005,6 +1046,7 @@ window.stopQrCodeScanner = function() {
     });
   }
 
+  // Shared prices in global/prices
   function savePrices(){
     set(ref(db, 'global/prices'), assets.map(a=>a.price));
   }
@@ -1017,11 +1059,19 @@ window.stopQrCodeScanner = function() {
       assets.forEach(a=>{
         let change;
         if (hot) {
-          change = Math.random() * (250 - 150) + 150; // hot: +150~250
+          // In hot hours, more ups, aiming for 150-200
+          change = Math.random() * 15 + 5; // Ensures a positive change, biasing towards higher values
         } else {
-          change = Math.random() * (100 - 50) + 50;   // normal: +50~100
+          // Normal hours, more downs, aiming for 50-100
+          change = (Math.random() - 0.6) * 10; // Biases towards negative change
         }
-        a.price = Math.max(1, a.price + change);
+        a.price = Math.max(1, a.price + change); // Ensure price doesn't go below 1
+        
+        // Clamp prices within desired ranges, while still allowing fluctuations
+        if (hot && a.price > 200) a.price = 200 - (Math.random() * 5); // Gently bring down if too high in hot
+        if (hot && a.price < 150) a.price = 150 + (Math.random() * 5); // Gently bring up if too low in hot
+        if (!hot && a.price > 100) a.price = 100 - (Math.random() * 5); // Gently bring down if too high in normal
+        if (!hot && a.price < 50) a.price = 50 + (Math.random() * 5); // Gently bring up if too low in normal
       });
       savePrices();
       updateUI();
@@ -1038,8 +1088,10 @@ window.stopQrCodeScanner = function() {
   });
 
   function updateUI(){
+    // Update infoCredits
     const el = document.getElementById("infoCredits");
     if(el) el.textContent = Math.round(balance);
+    // Update table
     const tbody = document.getElementById("assetsTableBody");
     if(tbody){
       tbody.innerHTML = "";
@@ -1076,7 +1128,23 @@ window.stopQrCodeScanner = function() {
     }else alert("You don't own this asset!");
   };
 
+  // Load at start
   loadUserData();
 </script>
+
+---
+
+### Investment Box
+
+<button onclick="document.getElementById('investBox').style.display='block'">Open Investment</button>
+<div id="investBox" style="display:none;">
+  <table border="1">
+    <thead>
+      <tr><th>Name</th><th>Price</th><th>Owned</th><th>Buy</th><th>Sell</th></tr>
+    </thead>
+    <tbody id="assetsTableBody"></tbody>
+  </table>
+</div>
+
 </body>
 </html>
