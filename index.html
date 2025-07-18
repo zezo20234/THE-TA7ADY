@@ -822,114 +822,115 @@ try {
 }
 };
 
-// --- Credit Code Redemption with Full GIVE & TAKE Support (Positive or Negative Amounts) ---
-window.redeemCreditCode = async function (codeToRedeemParam = null) {
-  const codeToRedeem = codeToRedeemParam || document.getElementById("redeemCodeInput").value.trim();
+// --- Credit Code Redemption (modified to accept scanned code) ---
+window.redeemCreditCode = async function(codeToRedeemParam = null) { // Added parameter
+const codeToRedeem = codeToRedeemParam || document.getElementById("redeemCodeInput").value.trim();
 
-  if (!currentUser) {
-    alert("You must be logged in to redeem a code.");
-    return;
-  }
+if (!currentUser) {
+alert("You must be logged in to redeem a code.");
+return;
+}
+if (!codeToRedeem) {
+alert("Please enter a code or scan a QR code.");
+return;
+}
 
-  if (!codeToRedeem) {
-    alert("Please enter a code or scan a QR code.");
-    return;
-  }
+const codeRef = ref(database, 'creditCodes/' + codeToRedeem);
 
-  const codeRef = ref(database, 'creditCodes/' + codeToRedeem);
+try {
+const snapshot = await get(codeRef);
+if (!snapshot.exists()) {
+    alert("Invalid or expired credit code.");
+    return;
+}
 
-  try {
-    const snapshot = await get(codeRef);
-    if (!snapshot.exists()) {
-      alert("Invalid or expired credit code.");
-      return;
-    }
+const codeData = snapshot.val();
+if (codeData.expiresAt && Date.now() > codeData.expiresAt) {
+    alert("This credit code has expired.");
+    // Optionally remove expired code from Firebase
+    remove(codeRef);
+    return;
+}
 
-    const codeData = snapshot.val();
-    const { amount: rawAmount, type, createdBy, expiresAt } = codeData;
+const creditsToAdd = codeData.amount;
+const newCredits = (currentUserData.credits ?? 0) + creditsToAdd;
 
-    const amount = Number(rawAmount);
+// Use atomic update for the current user's credits and to delete the code
+const updates = {};
+updates['/users/' + currentUser + '/credits'] = newCredits;
+updates['/creditCodes/' + codeToRedeem] = null; // Delete the code after redemption
 
-    if (isNaN(amount) || amount === 0) {
-      alert("Invalid credit amount in the code.");
-      return;
-    }
+await update(ref(database), updates);
 
-    if (expiresAt && Date.now() > expiresAt) {
-      alert("This credit code has expired.");
-      remove(codeRef);
-      return;
-    }
+currentUserData.credits = newCredits;
+document.getElementById("infoCredits").textContent = newCredits;
+document.getElementById("redeemCodeInput").value = ''; // Clear input field
 
-    const redeemerRef = ref(database, 'users/' + currentUser + '/credits');
-    const creatorRef = ref(database, 'users/' + createdBy + '/credits');
+alert(`Successfully redeemed ${creditsToAdd} credits! Your new balance is ${newCredits}.`);
 
-    const [redeemerSnap, creatorSnap] = await Promise.all([
-      get(redeemerRef),
-      get(creatorRef)
-    ]);
+} catch (error) {
+console.error("Error redeeming credit code:", error);
+alert("Error redeeming credit code. Please try again.");
+}
+};
 
-    const redeemerCredits = redeemerSnap.exists() ? redeemerSnap.val() : 0;
-    const creatorCredits = creatorSnap.exists() ? creatorSnap.val() : 0;
+// --- QR Code Scanner Functions ---
+window.startQrCodeScanner = function() {
+if (!html5QrCode) {
+html5QrCode = new Html5Qrcode("qr-reader");
+}
 
-    const updates = {};
+const qrReaderDiv = document.getElementById('qr-reader');
+qrReaderDiv.style.display = 'block';
+document.getElementById('startScannerButton').style.display = 'none';
+document.getElementById('stopScannerButton').style.display = 'block';
+document.getElementById('redeemCodeInput').style.display = 'block'; // Show manual input as well
+document.getElementById('redeemManualButton').style.display = 'block';
 
-    if (type === "give") {
-      // GIVE: Creator → Redeemer (positive), or Redeemer → Creator (negative)
-      if (amount > 0) {
-        if (creatorCredits < amount) {
-          alert("Code creator doesn't have enough credits to give.");
-          return;
-        }
-      } else {
-        if (redeemerCredits < Math.abs(amount)) {
-          alert("You don't have enough credits to give.");
-          return;
-        }
-      }
+html5QrCode.start(
+{ facingMode: "environment" }, // Prefer back camera
+{
+    fps: 10,    // frames per second
+    qrbox: { width: 250, height: 250 }  // confine QR box to 250x250
+},
+(decodedText, decodedResult) => {
+    // console.log(`QR Code detected: ${decodedText}`);
+    if (decodedText) {
+        html5QrCode.stop().then(() => {
+            // console.log("QR Code scanner stopped.");
+            document.getElementById('qr-reader').style.display = 'none';
+            document.getElementById('stopScannerButton').style.display = 'none';
+            window.redeemCreditCode(decodedText); // Redeem the scanned code
+        }).catch(err => {
+            console.error("Error stopping scanner:", err);
+        });
+    }
+},
+(errorMessage) => {
+    // console.warn(`QR Code scanning error: ${errorMessage}`);
+}
+).catch((err) => {
+console.error(`Unable to start QR Code scanner: ${err}`);
+alert("Error starting QR scanner. Please ensure camera access is granted.");
+document.getElementById('qr-reader').style.display = 'none';
+document.getElementById('startScannerButton').style.display = 'block';
+document.getElementById('stopScannerButton').style.display = 'none';
+});
+};
 
-      updates['/users/' + currentUser + '/credits'] = redeemerCredits + amount;
-      updates['/users/' + createdBy + '/credits'] = creatorCredits - amount;
-
-      alert(`${amount > 0 ? 'You received' : 'You gave'} ${Math.abs(amount)} credits ${amount > 0 ? 'from' : 'to'} ${createdBy}.`);
-
-    } else if (type === "take") {
-      // TAKE: Redeemer → Creator (positive), or Creator → Redeemer (negative)
-      if (amount > 0) {
-        if (redeemerCredits < amount) {
-          alert("You don't have enough credits to redeem this code.");
-          return;
-        }
-      } else {
-        if (creatorCredits < Math.abs(amount)) {
-          alert("Creator doesn't have enough credits to give you.");
-          return;
-        }
-      }
-
-      updates['/users/' + currentUser + '/credits'] = redeemerCredits - amount;
-      updates['/users/' + createdBy + '/credits'] = creatorCredits + amount;
-
-      alert(`${amount > 0 ? 'You lost' : 'You received'} ${Math.abs(amount)} credits ${amount > 0 ? 'to' : 'from'} ${createdBy}.`);
-    } else {
-      alert("Invalid credit code type.");
-      return;
-    }
-
-    // Remove used code
-    updates['/creditCodes/' + codeToRedeem] = null;
-
-    await update(ref(database), updates);
-
-    const newBalance = updates['/users/' + currentUser + '/credits'];
-    currentUserData.credits = newBalance;
-    document.getElementById("infoCredits").textContent = newBalance;
-    document.getElementById("redeemCodeInput").value = '';
-
-  } catch (error) {
-    console.error("Error redeeming credit code:", error);
-    alert("Error redeeming credit code. Please try again.");
-  }
+window.stopQrCodeScanner = function() {
+if (html5QrCode && html5QrCode.isScanning) {
+html5QrCode.stop().then(() => {
+    // console.log("QR Code scanner stopped.");
+    document.getElementById('qr-reader').style.display = 'none';
+    document.getElementById('startScannerButton').style.display = 'block';
+    document.getElementById('stopScannerButton').style.display = 'none';
+    document.getElementById('redeemCodeInput').style.display = 'block';
+    document.getElementById('redeemManualButton').style.display = 'block';
+}).catch(err => {
+    console.error("Error stopping scanner:", err);
+});
+}
 };
 
 </script>
