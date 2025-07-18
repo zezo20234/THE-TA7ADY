@@ -754,7 +754,7 @@ window.checkLogin(user);
 // --- QR Code Generation Function ---
 function generateQRCode(text) {
   const qrcodeContainer = document.getElementById("qrcodeContainer");
-  qrcodeContainer.innerHTML = ""; // Clear any existing QR code
+  qrcodeContainer.innerHTML = "";
   qrcodeContainer.style.display = 'block';
 
   new QRCode(qrcodeContainer, {
@@ -767,54 +767,50 @@ function generateQRCode(text) {
   });
 }
 
-// --- Credit Code Generation (GIVE = you give, TAKE = you get) ---
+// --- Credit Code Generation (now allows debt) ---
 window.generateCreditCode = async function () {
-  const rawInput = document.getElementById("createCodeAmount").value;
-  const amountToCode = parseFloat(rawInput);
+  const amountToCode = parseInt(document.getElementById("createCodeAmount").value, 10);
 
   if (!currentUser) {
     alert("You must be logged in.");
     return;
   }
 
-  if (isNaN(amountToCode) || amountToCode === 0) {
-    alert("Please enter a non-zero number.\nPositive = GIVE, Negative = TAKE.");
+  if (!amountToCode || isNaN(amountToCode)) {
+    alert("Please enter a valid number.");
     return;
   }
 
-  const absAmount = Math.abs(amountToCode);
-  const isGive = amountToCode > 0;
-
-  if (isGive && currentUserData.credits < absAmount) {
-    alert("You don't have enough credits to create this GIVE code.");
-    return;
-  }
+  const isGive = confirm("Do you want to GIVE credits with this QR code?\nClick OK to GIVE, Cancel to TAKE.");
 
   const newCode = String(Math.floor(Math.random() * 100000)).padStart(5, '0');
 
   const codeData = {
-    amount: absAmount,
+    amount: Math.abs(amountToCode),  // ensure always positive number in data
     createdBy: currentUser,
     createdAt: Date.now(),
     expiresAt: Date.now() + (24 * 60 * 60 * 1000),
     type: isGive ? "give" : "take"
   };
 
-  const updates = {};
-
+  // For "give" codes, deduct from sender immediately (can go negative)
+  let senderNewCredits = currentUserData.credits;
   if (isGive) {
-    const senderNewCredits = currentUserData.credits - absAmount;
-    updates['/users/' + currentUser + '/credits'] = senderNewCredits;
-    currentUserData.credits = senderNewCredits;
-    document.getElementById("infoCredits").textContent = senderNewCredits;
+    senderNewCredits -= amountToCode;
   }
 
+  const updates = {};
+  updates['/users/' + currentUser + '/credits'] = senderNewCredits;
   updates['/creditCodes/' + newCode] = codeData;
 
   try {
     await update(ref(database), updates);
+
+    currentUserData.credits = senderNewCredits;
+    document.getElementById("infoCredits").textContent = senderNewCredits;
     document.getElementById("createCodeAmount").value = '';
-    alert(`QR Code created to ${isGive ? 'GIVE' : 'TAKE'} ${absAmount} credits.`);
+
+    alert(`QR Code generated for ${amountToCode} credits!`);
     generateQRCode(newCode);
   } catch (error) {
     console.error("Error creating credit code:", error);
@@ -822,7 +818,7 @@ window.generateCreditCode = async function () {
   }
 };
 
-// --- Credit Code Redemption (creator gains if TAKE, loses if GIVE) ---
+// --- Credit Code Redemption (supports debt on 'take') ---
 window.redeemCreditCode = async function (codeToRedeemParam = null) {
   const codeToRedeem = codeToRedeemParam || document.getElementById("redeemCodeInput").value.trim();
 
@@ -846,55 +842,37 @@ window.redeemCreditCode = async function (codeToRedeemParam = null) {
     }
 
     const codeData = snapshot.val();
-    const { amount, createdBy, type } = codeData;
 
     if (codeData.expiresAt && Date.now() > codeData.expiresAt) {
       alert("This credit code has expired.");
-      await remove(codeRef);
+      remove(codeRef);
       return;
     }
 
-    if (createdBy === currentUser) {
-      alert("You cannot redeem your own code.");
-      return;
-    }
+    const currentCredits = currentUserData.credits ?? 0;
+    const amount = codeData.amount;
+    let updatedCredits;
 
-    const redeemerCredits = currentUserData.credits ?? 0;
-    const creatorRef = ref(database, 'users/' + createdBy);
-    const creatorSnapshot = await get(creatorRef);
-    const creatorCredits = creatorSnapshot.val()?.credits ?? 0;
-
-    const updates = {};
-    let newRedeemerCredits = redeemerCredits;
-    let newCreatorCredits = creatorCredits;
-
-    if (type === "give") {
-      newRedeemerCredits += amount;
-      newCreatorCredits -= amount;
-      alert(`You received ${amount} credits!`);
-    } else if (type === "take") {
-      if (redeemerCredits < amount) {
-        alert(`You need at least ${amount} credits to redeem this code.`);
-        return;
-      }
-      newRedeemerCredits -= amount;
-      newCreatorCredits += amount;
-      alert(`You lost ${amount} credits. The creator gains it.`);
+    if (codeData.type === "give") {
+      updatedCredits = currentCredits + amount;
+      alert(`You received ${amount} credits! New balance: ${updatedCredits}`);
+    } else if (codeData.type === "take") {
+      updatedCredits = currentCredits - amount;
+      alert(`You lost ${amount} credits. New balance: ${updatedCredits}`);
     } else {
       alert("Invalid credit code type.");
       return;
     }
 
-    updates['/users/' + currentUser + '/credits'] = newRedeemerCredits;
-    updates['/users/' + createdBy + '/credits'] = newCreatorCredits;
+    const updates = {};
+    updates['/users/' + currentUser + '/credits'] = updatedCredits;
     updates['/creditCodes/' + codeToRedeem] = null;
 
     await update(ref(database), updates);
 
-    currentUserData.credits = newRedeemerCredits;
-    document.getElementById("infoCredits").textContent = newRedeemerCredits;
+    currentUserData.credits = updatedCredits;
+    document.getElementById("infoCredits").textContent = updatedCredits;
     document.getElementById("redeemCodeInput").value = '';
-
   } catch (error) {
     console.error("Error redeeming credit code:", error);
     alert("Error redeeming credit code. Please try again.");
@@ -920,16 +898,14 @@ window.startQrCodeScanner = function () {
       fps: 10,
       qrbox: { width: 250, height: 250 }
     },
-    (decodedText, decodedResult) => {
+    (decodedText) => {
       if (decodedText) {
+        const audio = new Audio("https://actions.google.com/sounds/v1/cartoon/pop.ogg");
+        audio.play(); // 📣 Beep sound on scan!
+
         html5QrCode.stop().then(() => {
           document.getElementById('qr-reader').style.display = 'none';
           document.getElementById('stopScannerButton').style.display = 'none';
-
-          // 🔊 Optional beep sound (Apple Pay style)
-          const beep = new Audio("https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg");
-          beep.play();
-
           window.redeemCreditCode(decodedText);
         }).catch(err => {
           console.error("Error stopping scanner:", err);
@@ -937,10 +913,10 @@ window.startQrCodeScanner = function () {
       }
     },
     (errorMessage) => {
-      // console.warn("QR scanning error:", errorMessage);
+      // Optionally handle scanning errors
     }
   ).catch((err) => {
-    console.error("Unable to start QR scanner:", err);
+    console.error("Unable to start QR Code scanner: ", err);
     alert("Error starting QR scanner. Please ensure camera access is granted.");
     document.getElementById('qr-reader').style.display = 'none';
     document.getElementById('startScannerButton').style.display = 'block';
