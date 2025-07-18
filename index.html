@@ -751,151 +751,20 @@ window.quickLoginUser = function(user) {
 window.checkLogin(user);
 };
 
-// --- QR Code Generation Function ---
-function generateQRCode(text) {
-  const qrcodeContainer = document.getElementById("qrcodeContainer");
-  qrcodeContainer.innerHTML = ""; // Clear any existing QR code
-  qrcodeContainer.style.display = 'block'; // Show the QR code container
+<!-- ==== CREATE CREDIT CODE ==== -->
+<h3>Create Credit Code</h3>
+<input type="number" id="createCodeAmount" placeholder="Amount" />
+<select id="transferDirection">
+  <option value="give">Give Credits</option>
+  <option value="take">Take Credits</option>
+</select>
+<button onclick="generateCreditCode()">Generate Credit Code</button>
+<div id="qrcodeContainer" style="margin-top: 10px;"></div>
 
-  new QRCode(qrcodeContainer, {
-    text: text,
-    width: 150,
-    height: 150,
-    colorDark: "#0000FF",
-    colorLight: "#FFFFFF",
-    correctLevel: QRCode.CorrectLevel.H
-  });
-}
-
-// --- Credit Code Generation (with give/take) ---
-window.generateCreditCode = async function () {
-  const amountToCode = parseInt(document.getElementById("createCodeAmount").value, 10);
-  const direction = document.getElementById("transferDirection").value; // get "give" or "take"
-
-  if (!currentUser) {
-    alert("You must be logged in.");
-    return;
-  }
-  if (!amountToCode || amountToCode <= 0) {
-    alert("Please enter a valid, positive amount.");
-    return;
-  }
-
-  if (direction === "give" && currentUserData.credits < amountToCode) {
-    alert("You don't have enough credits to create this code.");
-    return;
-  }
-
-  const newCode = String(Math.floor(Math.random() * 100000)).padStart(5, '0');
-  const codeData = {
-    amount: amountToCode,
-    createdBy: currentUser,
-    direction: direction,
-    createdAt: Date.now(),
-    expiresAt: Date.now() + (24 * 60 * 60 * 1000) // 24 hours
-  };
-
-  const updates = {};
-
-  if (direction === "give") {
-    const newSenderCredits = currentUserData.credits - amountToCode;
-    updates['/users/' + currentUser + '/credits'] = newSenderCredits;
-    currentUserData.credits = newSenderCredits;
-    document.getElementById("infoCredits").textContent = newSenderCredits;
-  }
-
-  updates['/creditCodes/' + newCode] = codeData;
-
-  try {
-    await update(ref(database), updates);
-    document.getElementById("createCodeAmount").value = '';
-    alert(`QR Code generated for ${amountToCode} credits (${direction})`);
-    generateQRCode(newCode);
-  } catch (error) {
-    console.error("Error creating credit code:", error);
-    alert("Error creating credit code. Please try again.");
-  }
-};
-
-// --- Credit Code Redemption (supports give & take) ---
-window.redeemCreditCode = async function (codeToRedeemParam = null) {
-  const codeToRedeem = codeToRedeemParam || document.getElementById("redeemCodeInput").value.trim();
-
-  if (!currentUser) {
-    alert("You must be logged in to redeem a code.");
-    return;
-  }
-  if (!codeToRedeem) {
-    alert("Please enter a code or scan a QR code.");
-    return;
-  }
-
-  const codeRef = ref(database, 'creditCodes/' + codeToRedeem);
-
-  try {
-    const snapshot = await get(codeRef);
-    if (!snapshot.exists()) {
-      alert("Invalid or expired credit code.");
-      return;
-    }
-
-    const codeData = snapshot.val();
-    const senderId = codeData.createdBy;
-    const direction = codeData.direction || "give";
-    const amount = Math.abs(Number(codeData.amount));
-
-    if (codeData.expiresAt && Date.now() > codeData.expiresAt) {
-      alert("This credit code has expired.");
-      remove(codeRef);
-      return;
-    }
-
-    if (senderId === currentUser) {
-      alert("You cannot redeem your own code.");
-      return;
-    }
-
-    const redeemerRef = ref(database, `/users/${currentUser}/credits`);
-    const senderRef = ref(database, `/users/${senderId}/credits`);
-    const [redeemerSnap, senderSnap] = await Promise.all([get(redeemerRef), get(senderRef)]);
-    const redeemerCredits = redeemerSnap.val() || 0;
-    const senderCredits = senderSnap.val() || 0;
-
-    const updates = {};
-
-    if (direction === "give") {
-      if (senderCredits < amount) {
-        alert("Sender does not have enough credits.");
-        return;
-      }
-      updates[`/users/${senderId}/credits`] = senderCredits - amount;
-      updates[`/users/${currentUser}/credits`] = redeemerCredits + amount;
-      currentUserData.credits = redeemerCredits + amount;
-    } else if (direction === "take") {
-      if (redeemerCredits < amount) {
-        alert("You don't have enough credits.");
-        return;
-      }
-      updates[`/users/${currentUser}/credits`] = redeemerCredits - amount;
-      updates[`/users/${senderId}/credits`] = senderCredits + amount;
-      currentUserData.credits = redeemerCredits - amount;
-    } else {
-      alert("Invalid code direction.");
-      return;
-    }
-
-    updates['/creditCodes/' + codeToRedeem] = null;
-    await update(ref(database), updates);
-
-    document.getElementById("infoCredits").textContent = currentUserData.credits;
-    document.getElementById("redeemCodeInput").value = '';
-    alert(`Successfully redeemed (${direction === "give" ? "+" : "-"}${amount} credits). New balance: ${currentUserData.credits}`);
-
-  } catch (error) {
-    console.error("Error redeeming credit code:", error);
-    alert("Error redeeming credit code. Please try again.");
-  }
-};
+<!-- ==== REDEEM CREDIT CODE ==== -->
+<h3>Redeem Credit Code</h3>
+<input type="text" id="redeemCodeInput" placeholder="Enter Code" />
+<button id="redeemManualButton" onclick="redeemCreditCode()">Redeem Code</button>
 
 </script>
 
