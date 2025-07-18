@@ -751,315 +751,187 @@ window.quickLoginUser = function(user) {
 window.checkLogin(user);
 };
 
-/* --- JavaScript Code --- */
-
-// --- Firebase Configuration ---
-// REPLACE THIS WITH YOUR ACTUAL FIREBASE CONFIGURATION
-const firebaseConfig = {
-  apiKey: "AIzaSyAdmiUcQ_yZDL4Gg0r93HjqzPYQ6N-gzM8",
-    authDomain: "the-challenge-fa9b2.firebaseapp.com",
-    databaseURL: "https://the-challenge-fa9b2-default-rtdb.firebaseio.com",
-    projectId: "the-challenge-fa9b2",
-    storageBucket: "the-challenge-fa9b2.appspot.com",
-    messagingSenderId: "4102830619",
-    appId: "1:4102830619:web:581e033f36ec02708916be"
-};
-
-// Initialize Firebase
-const app = firebase.initializeApp(firebaseConfig);
-const database = app.database(); // Using compat version for .database()
-const auth = app.auth(); // Using compat version for .auth()
-
-// --- Global Variables ---
-let currentUser = null;
-let currentUserData = { credits: 0 }; // Initialize with default
-let html5QrCode = null; // Variable to hold the Html5Qrcode instance
-
-// --- Firebase Authentication Functions (for demonstration) ---
-window.login = async function() {
-    const email = document.getElementById("loginEmail").value;
-    const password = document.getElementById("loginPassword").value;
-    try {
-        await auth.signInWithEmailAndPassword(email, password);
-        alert("Logged in successfully!");
-    } catch (error) {
-        console.error("Login error:", error);
-        alert("Login failed: " + error.message);
-    }
-};
-
-window.signup = async function() {
-    const email = document.getElementById("loginEmail").value;
-    const password = document.getElementById("loginPassword").value;
-    try {
-        await auth.createUserWithEmailAndPassword(email, password);
-        alert("Account created and logged in!");
-    } catch (error) {
-        console.error("Sign up error:", error);
-        alert("Sign up failed: " + error.message);
-    }
-};
-
-window.logout = async function() {
-    try {
-        await auth.signOut();
-        alert("Logged out!");
-    } catch (error) {
-        console.error("Logout error:", error);
-        alert("Logout failed: " + error.message);
-    }
-};
-
-// --- Firebase Authentication State Listener ---
-auth.onAuthStateChanged(async (user) => {
-    const userInfoElement = document.getElementById("userInfo");
-    const infoCreditsElement = document.getElementById("infoCredits");
-    const loginSection = document.getElementById("loginSection");
-
-    if (user) {
-        currentUser = user.uid;
-        userInfoElement.textContent = user.email || user.uid; // Display email if available, else UID
-        loginSection.style.display = 'none'; // Hide login fields
-
-        // Fetch user data from Firebase
-        const userRef = database.ref('users/' + currentUser);
-        try {
-            const snapshot = await userRef.once('value');
-            if (snapshot.exists()) {
-                currentUserData = snapshot.val();
-                infoCreditsElement.textContent = currentUserData.credits;
-            } else {
-                // If user data doesn't exist, create it with 0 credits
-                await userRef.set({ credits: 0 });
-                currentUserData = { credits: 0 };
-                infoCreditsElement.textContent = 0;
-                alert("New user data created with 0 credits.");
-            }
-        } catch (error) {
-            console.error("Error fetching user data:", error);
-            alert("Error loading user data. Please try refreshing.");
-        }
-    } else {
-        currentUser = null;
-        currentUserData = { credits: 0 };
-        userInfoElement.textContent = "N/A";
-        infoCreditsElement.textContent = "0";
-        loginSection.style.display = 'block'; // Show login fields
-    }
-});
-
 // --- QR Code Generation Function ---
 function generateQRCode(text) {
-    const qrcodeContainer = document.getElementById("qrcodeContainer");
-    if (!qrcodeContainer) {
-        console.error("QR Code container not found.");
-        return;
-    }
-    qrcodeContainer.innerHTML = ""; // Clear any existing QR code
-    qrcodeContainer.style.display = 'block';
+const qrcodeContainer = document.getElementById("qrcodeContainer");
+qrcodeContainer.innerHTML = ""; // Clear any existing QR code
+// Show the QR code container
+qrcodeContainer.style.display = 'block';
 
-    // Create a new QRCode instance
-    new QRCode(qrcodeContainer, {
-        text: text,
-        width: 150, // Slightly larger for better scanning
-        height: 150,
-        colorDark : "#0000FF", // Changed to blue for QR code dots
-        colorLight : "#FFFFFF",
-        correctLevel : QRCode.CorrectLevel.H
-    });
+// Create a new QRCode instance
+new QRCode(qrcodeContainer, {
+text: text,
+width: 150, // Slightly larger for better scanning
+height: 150,
+colorDark : "#0000FF", // Changed to blue for QR code dots
+colorLight : "#FFFFFF",
+correctLevel : QRCode.CorrectLevel.H
+});
 }
 
 // --- Credit Code Generation ---
 window.generateCreditCode = async function() {
-    const createCodeAmountInput = document.getElementById("createCodeAmount");
-    const amountToCode = parseInt(createCodeAmountInput.value, 10);
+const amountToCode = parseInt(document.getElementById("createCodeAmount").value, 10);
 
-    if (!currentUser) {
-        alert("You must be logged in to create a code.");
-        return;
-    }
-    if (isNaN(amountToCode) || amountToCode <= 0) {
-        alert("Please enter a valid, positive amount for the credit code.");
-        return;
-    }
-    if (currentUserData.credits < amountToCode) {
-        alert(`You don't have enough credits. Your balance: ${currentUserData.credits}. Needed: ${amountToCode}.`);
-        return;
-    }
+if (!currentUser) {
+alert("You must be logged in.");
+return;
+}
+if (!amountToCode || amountToCode <= 0) {
+alert("Please enter a valid, positive amount.");
+return;
+}
+if (currentUserData.credits < amountToCode) {
+alert("You don't have enough credits to create this code.");
+return;
+}
 
-    // Generate a 5-digit numeric code
-    const newCode = String(Math.floor(Math.random() * 100000)).padStart(5, '0');
+// Generate a 5-digit numeric code
+const newCode = String(Math.floor(Math.random() * 100000)).padStart(5, '0');
 
-    // Define the data for the new code
-    const codeData = {
-        amount: amountToCode,
-        createdBy: currentUser,
-        createdAt: Date.now(),
-        expiresAt: Date.now() + (24 * 60 * 60 * 1000) // Expires in 24 hours
-    };
+// Define the data for the new code
+const codeData = {
+amount: amountToCode,
+createdBy: currentUser,
+createdAt: Date.now(),
+expiresAt: Date.now() + (24 * 60 * 60 * 1000) // Expires in 24 hours
+};
 
-    const senderNewCredits = currentUserData.credits - amountToCode;
+const senderNewCredits = currentUserData.credits - amountToCode;
 
-    // Use atomic update to deduct credits and create the code simultaneously
-    const updates = {};
-    updates['/users/' + currentUser + '/credits'] = senderNewCredits;
-    updates['/creditCodes/' + newCode] = codeData;
+// Use atomic update to deduct credits and create the code simultaneously
+const updates = {};
+updates['/users/' + currentUser + '/credits'] = senderNewCredits;
+updates['/creditCodes/' + newCode] = codeData;
 
-    try {
-        await database.ref().update(updates); // Use .update() on the root ref
+try {
+  await update(ref(database), updates);
+  // Update UI
+  currentUserData.credits = senderNewCredits;
+  document.getElementById("infoCredits").textContent = senderNewCredits;
+  document.getElementById("createCodeAmount").value = ''; // Clear the input field
 
-        // Update UI
-        currentUserData.credits = senderNewCredits;
-        document.getElementById("infoCredits").textContent = senderNewCredits;
-        createCodeAmountInput.value = ''; // Clear the input field
+  alert(`QR Code generated for ${amountToCode} credits!`);
 
-        alert(`Successfully generated QR code for ${amountToCode} credits! Code: ${newCode}`);
+  // --- Generate QR Code for the newCode ---
+  generateQRCode(newCode);
 
-        // Generate QR Code for the newCode
-        generateQRCode(newCode);
-
-    } catch (error) {
-        console.error("Error creating credit code:", error);
-        alert("Error creating credit code. Please try again later.");
-    }
+} catch (error) {
+  console.error("Error creating credit code:", error);
+  alert("Error creating credit code. Please try again.");
+}
 };
 
 // --- Credit Code Redemption (modified to accept scanned code) ---
 window.redeemCreditCode = async function(codeToRedeemParam = null) { // Added parameter
-    const redeemCodeInput = document.getElementById("redeemCodeInput");
-    const codeToRedeem = codeToRedeemParam || redeemCodeInput.value.trim();
+const codeToRedeem = codeToRedeemParam || document.getElementById("redeemCodeInput").value.trim();
 
-    if (!currentUser) {
-        alert("You must be logged in to redeem a code.");
-        return;
-    }
-    if (!codeToRedeem) {
-        alert("Please enter a code or scan a QR code to redeem.");
-        return;
-    }
+if (!currentUser) {
+alert("You must be logged in to redeem a code.");
+return;
+}
+if (!codeToRedeem) {
+alert("Please enter a code or scan a QR code.");
+return;
+}
 
-    const codeRef = database.ref('creditCodes/' + codeToRedeem);
+const codeRef = ref(database, 'creditCodes/' + codeToRedeem);
 
-    try {
-        const snapshot = await codeRef.once('value');
-        if (!snapshot.exists()) {
-            alert("Invalid or already redeemed credit code.");
-            return;
-        }
+try {
+const snapshot = await get(codeRef);
+if (!snapshot.exists()) {
+    alert("Invalid or expired credit code.");
+    return;
+}
 
-        const codeData = snapshot.val();
-        if (codeData.expiresAt && Date.now() > codeData.expiresAt) {
-            alert("This credit code has expired.");
-            // Optionally remove expired code from Firebase
-            await codeRef.remove(); // Ensure expired codes are removed
-            return;
-        }
+const codeData = snapshot.val();
+if (codeData.expiresAt && Date.now() > codeData.expiresAt) {
+    alert("This credit code has expired.");
+    // Optionally remove expired code from Firebase
+    remove(codeRef);
+    return;
+}
 
-        if (codeData.createdBy === currentUser) {
-            alert("You cannot redeem a code you created.");
-            return;
-        }
+const creditsToAdd = codeData.amount;
+const newCredits = (currentUserData.credits ?? 0) + creditsToAdd;
 
-        const creditsToAdd = codeData.amount;
-        // Ensure currentUserData.credits is treated as a number
-        const newCredits = (currentUserData.credits ? Number(currentUserData.credits) : 0) + creditsToAdd;
+// Use atomic update for the current user's credits and to delete the code
+const updates = {};
+updates['/users/' + currentUser + '/credits'] = newCredits;
+updates['/creditCodes/' + codeToRedeem] = null; // Delete the code after redemption
 
-        // Use atomic update for the current user's credits and to delete the code
-        const updates = {};
-        updates['/users/' + currentUser + '/credits'] = newCredits;
-        updates['/creditCodes/' + codeToRedeem] = null; // Delete the code after redemption
+await update(ref(database), updates);
 
-        await database.ref().update(updates);
+currentUserData.credits = newCredits;
+document.getElementById("infoCredits").textContent = newCredits;
+document.getElementById("redeemCodeInput").value = ''; // Clear input field
 
-        currentUserData.credits = newCredits;
-        document.getElementById("infoCredits").textContent = newCredits;
-        redeemCodeInput.value = ''; // Clear input field
+alert(`Successfully redeemed ${creditsToAdd} credits! Your new balance is ${newCredits}.`);
 
-        alert(`Successfully redeemed ${creditsToAdd} credits! Your new balance is ${newCredits}.`);
-
-    } catch (error) {
-        console.error("Error redeeming credit code:", error);
-        alert("Error redeeming credit code. Please try again.");
-    }
+} catch (error) {
+console.error("Error redeeming credit code:", error);
+alert("Error redeeming credit code. Please try again.");
+}
 };
 
 // --- QR Code Scanner Functions ---
 window.startQrCodeScanner = function() {
-    const qrReaderDiv = document.getElementById('qr-reader');
-    const startScannerButton = document.getElementById('startScannerButton');
-    const stopScannerButton = document.getElementById('stopScannerButton');
-    const redeemCodeInput = document.getElementById('redeemCodeInput');
-    const redeemManualButton = document.getElementById('redeemManualButton');
+if (!html5QrCode) {
+html5QrCode = new Html5Qrcode("qr-reader");
+}
 
-    if (!qrReaderDiv) {
-        console.error("QR reader container not found.");
-        return;
-    }
+const qrReaderDiv = document.getElementById('qr-reader');
+qrReaderDiv.style.display = 'block';
+document.getElementById('startScannerButton').style.display = 'none';
+document.getElementById('stopScannerButton').style.display = 'block';
+document.getElementById('redeemCodeInput').style.display = 'block'; // Show manual input as well
+document.getElementById('redeemManualButton').style.display = 'block';
 
-    if (!html5QrCode) {
-        html5QrCode = new Html5Qrcode("qr-reader");
-    }
-
-    qrReaderDiv.style.display = 'block';
-    if (startScannerButton) startScannerButton.style.display = 'none';
-    if (stopScannerButton) stopScannerButton.style.display = 'block';
-    if (redeemCodeInput) redeemCodeInput.style.display = 'none'; // Hide manual input when scanning
-    if (redeemManualButton) redeemManualButton.style.display = 'none';
-
-    html5QrCode.start(
-        { facingMode: "environment" }, // Prefer back camera
-        {
-            fps: 10,    // frames per second
-            qrbox: { width: 250, height: 250 }  // confine QR box to 250x250
-        },
-        (decodedText, decodedResult) => {
-            if (decodedText) {
-                html5QrCode.stop().then(() => {
-                    qrReaderDiv.style.display = 'none';
-                    if (stopScannerButton) stopScannerButton.style.display = 'none';
-                    if (startScannerButton) startScannerButton.style.display = 'block';
-                    if (redeemCodeInput) redeemCodeInput.style.display = 'block';
-                    if (redeemManualButton) redeemManualButton.style.display = 'block';
-                    window.redeemCreditCode(decodedText); // Redeem the scanned code
-                }).catch(err => {
-                    console.error("Error stopping scanner after scan:", err);
-                });
-            }
-        },
-        (errorMessage) => {
-            // console.warn(`QR Code scanning error: ${errorMessage}`); // Suppress frequent logging in console
-        }
-    ).catch((err) => {
-        console.error(`Unable to start QR Code scanner: ${err}`);
-        alert("Error starting QR scanner. Please ensure camera access is granted and you are using a secure context (HTTPS) or a local development server.");
-        qrReaderDiv.style.display = 'none';
-        if (startScannerButton) startScannerButton.style.display = 'block';
-        if (stopScannerButton) stopScannerButton.style.display = 'none';
-        if (redeemCodeInput) redeemCodeInput.style.display = 'block';
-        if (redeemManualButton) redeemManualButton.style.display = 'block';
-    });
+html5QrCode.start(
+{ facingMode: "environment" }, // Prefer back camera
+{
+    fps: 10,    // frames per second
+    qrbox: { width: 250, height: 250 }  // confine QR box to 250x250
+},
+(decodedText, decodedResult) => {
+    // console.log(`QR Code detected: ${decodedText}`);
+    if (decodedText) {
+        html5QrCode.stop().then(() => {
+            // console.log("QR Code scanner stopped.");
+            document.getElementById('qr-reader').style.display = 'none';
+            document.getElementById('stopScannerButton').style.display = 'none';
+            window.redeemCreditCode(decodedText); // Redeem the scanned code
+        }).catch(err => {
+            console.error("Error stopping scanner:", err);
+        });
+    }
+},
+(errorMessage) => {
+    // console.warn(`QR Code scanning error: ${errorMessage}`);
+}
+).catch((err) => {
+console.error(`Unable to start QR Code scanner: ${err}`);
+alert("Error starting QR scanner. Please ensure camera access is granted.");
+document.getElementById('qr-reader').style.display = 'none';
+document.getElementById('startScannerButton').style.display = 'block';
+document.getElementById('stopScannerButton').style.display = 'none';
+});
 };
 
 window.stopQrCodeScanner = function() {
-    const qrReaderDiv = document.getElementById('qr-reader');
-    const startScannerButton = document.getElementById('startScannerButton');
-    const stopScannerButton = document.getElementById('stopScannerButton');
-    const redeemCodeInput = document.getElementById('redeemCodeInput');
-    const redeemManualButton = document.getElementById('redeemManualButton');
-
-    if (html5QrCode && html5QrCode.isScanning) {
-        html5QrCode.stop().then(() => {
-            qrReaderDiv.style.display = 'none';
-            if (startScannerButton) startScannerButton.style.display = 'block';
-            if (stopScannerButton) stopScannerButton.style.display = 'none';
-            if (redeemCodeInput) redeemCodeInput.style.display = 'block';
-            if (redeemManualButton) redeemManualButton.style.display = 'block';
-        }).catch(err => {
-            console.error("Error stopping scanner:", err);
-        });
-    }
+if (html5QrCode && html5QrCode.isScanning) {
+html5QrCode.stop().then(() => {
+    // console.log("QR Code scanner stopped.");
+    document.getElementById('qr-reader').style.display = 'none';
+    document.getElementById('startScannerButton').style.display = 'block';
+    document.getElementById('stopScannerButton').style.display = 'none';
+    document.getElementById('redeemCodeInput').style.display = 'block';
+    document.getElementById('redeemManualButton').style.display = 'block';
+}).catch(err => {
+    console.error("Error stopping scanner:", err);
+});
+}
 };
-
 
 </script>
 
