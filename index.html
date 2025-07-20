@@ -1120,6 +1120,121 @@ window.open('rules.html', '_blank'); // Opens 'rules.html' in a new tab/window
     <tbody id="assetsTableBody"></tbody>
   </table>
 </div>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
+  import { getFirestore, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
 
+  // Your Firebase config here (replace with your actual config)
+  const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_AUTH_DOMAIN",
+    projectId: "YOUR_PROJECT_ID",
+    // ... other config values ...
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const auth = getAuth(app);
+
+  // Spin prizes data - all positive as you said
+  const prizes = [
+    {credits: 100, days: 0},
+    {credits: 500, days: 0},
+    {credits: 1000, days: 0},
+    {credits: 2500, days: 0},
+    {credits: 0, days: -50},
+    {credits: 0, days: -100}
+  ];
+
+  // Helper function to get today string YYYY-MM-DD
+  function getTodayString() {
+    const d = new Date();
+    return d.toISOString().split('T')[0];
+  }
+
+  // UI Elements (you can create these or add to your HTML)
+  const spinBtn = document.createElement('button');
+  spinBtn.textContent = "Spin the Wheel";
+  document.body.appendChild(spinBtn);
+
+  const infoDiv = document.createElement('div');
+  document.body.appendChild(infoDiv);
+
+  const spinsLeftDiv = document.createElement('div');
+  document.body.appendChild(spinsLeftDiv);
+
+  let userId = null;
+  let userData = null;
+
+  function updateUI() {
+    spinsLeftDiv.textContent = `Spins Left Today: ${userData.spinsLeft}`;
+    infoDiv.textContent = `Credits: ${userData.credits} | Days: ${userData.days}`;
+  }
+
+  async function loadUserData(uid) {
+    const userDocRef = doc(db, "users", uid);
+    const docSnap = await getDoc(userDocRef);
+
+    if (docSnap.exists()) {
+      userData = docSnap.data();
+
+      // Reset spins if lastSpinDate is not today
+      if (userData.lastSpinDate !== getTodayString()) {
+        userData.spinsLeft = 3;
+        userData.lastSpinDate = getTodayString();
+        await setDoc(userDocRef, userData);
+      }
+    } else {
+      // New user doc
+      userData = {
+        spinsLeft: 3,
+        lastSpinDate: getTodayString(),
+        credits: 0,
+        days: 0
+      };
+      await setDoc(userDocRef, userData);
+    }
+
+    updateUI();
+  }
+
+  async function updateUserData() {
+    const userDocRef = doc(db, "users", userId);
+    await setDoc(userDocRef, userData);
+    updateUI();
+  }
+
+  spinBtn.addEventListener("click", async () => {
+    if (userData.spinsLeft <= 0) {
+      alert("No spins left today, come back tomorrow!");
+      return;
+    }
+
+    // Random prize
+    const prize = prizes[Math.floor(Math.random() * prizes.length)];
+
+    // Update user credits and days
+    userData.credits = (userData.credits || 0) + prize.credits;
+    userData.days = (userData.days || 0) + prize.days;
+    userData.spinsLeft--;
+
+    await updateUserData();
+
+    alert(`You won: ${prize.credits} credits and ${prize.days} days!`);
+  });
+
+  // Wait for auth and then load data
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      userId = user.uid;
+      await loadUserData(userId);
+    } else {
+      // For testing, simulate a user ID or prompt login
+      alert("Please log in to spin the wheel!");
+      // Or you can do anonymous auth here or handle guest users
+    }
+  });
+</script>
 </body>
 </html>
