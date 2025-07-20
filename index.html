@@ -1122,121 +1122,110 @@ window.open('rules.html', '_blank'); // Opens 'rules.html' in a new tab/window
 </div>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-  import { getFirestore, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
-  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
+  import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+  import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
 
-  // Your Firebase config here (replace with your actual config)
+  // ✅ Your Firebase Config
   const firebaseConfig = {
     apiKey: "AIzaSyAdmiUcQ_yZDL4Gg0r93HjqzPYQ6N-gzM8",
-authDomain: "the-challenge-fa9b2.firebaseapp.com",
-databaseURL: "https://the-challenge-fa9b2-default-rtdb.firebaseio.com",
-projectId: "the-challenge-fa9b2",
-storageBucket: "the-challenge-fa9b2.appspot.com",
-messagingSenderId: "4102830619",
-appId: "1:4102830619:web:581e033f36ec02708916be",
-measurementId: "G-7M7JLK1V86"
+    authDomain: "the-challenge-fa9b2.firebaseapp.com",
+    databaseURL: "https://the-challenge-fa9b2-default-rtdb.firebaseio.com",
+    projectId: "the-challenge-fa9b2",
+    storageBucket: "the-challenge-fa9b2.appspot.com",
+    messagingSenderId: "4102830619",
+    appId: "1:4102830619:web:581e033f36ec02708916be",
+    measurementId: "G-7M7JLK1V86"
   };
 
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
   const auth = getAuth(app);
 
-  // Spin prizes data - all positive as you said
   const prizes = [
-    {credits: 100, days: 0},
-    {credits: 500, days: 0},
-    {credits: 1000, days: 0},
-    {credits: 2500, days: 0},
-    {credits: 0, days: -50},
-    {credits: 0, days: -100}
+    { credits: 100, days: 0 },
+    { credits: 500, days: 0 },
+    { credits: 1000, days: 0 },
+    { credits: 2500, days: 0 },
+    { credits: 0, days: -50 },
+    { credits: 0, days: -100 }
   ];
 
-  // Helper function to get today string YYYY-MM-DD
-  function getTodayString() {
-    const d = new Date();
-    return d.toISOString().split('T')[0];
-  }
-
-  // UI Elements (you can create these or add to your HTML)
-  const spinBtn = document.createElement('button');
-  spinBtn.textContent = "Spin the Wheel";
-  document.body.appendChild(spinBtn);
-
-  const infoDiv = document.createElement('div');
-  document.body.appendChild(infoDiv);
-
-  const spinsLeftDiv = document.createElement('div');
-  document.body.appendChild(spinsLeftDiv);
-
+  const today = new Date().toISOString().split("T")[0];
   let userId = null;
   let userData = null;
 
-  function updateUI() {
-    spinsLeftDiv.textContent = `Spins Left Today: ${userData.spinsLeft}`;
-    infoDiv.textContent = `Credits: ${userData.credits} | Days: ${userData.days}`;
-  }
+  // ✅ UI Elements
+  const spinBtn = document.createElement("button");
+  spinBtn.textContent = "🎡 Spin the Wheel";
+  spinBtn.style.padding = "20px";
+  spinBtn.style.fontSize = "20px";
+  spinBtn.style.marginTop = "20px";
+  document.body.appendChild(spinBtn);
 
-  async function loadUserData(uid) {
-    const userDocRef = doc(db, "users", uid);
-    const docSnap = await getDoc(userDocRef);
+  const infoDiv = document.createElement("div");
+  infoDiv.style.marginTop = "15px";
+  infoDiv.style.fontSize = "18px";
+  document.body.appendChild(infoDiv);
 
-    if (docSnap.exists()) {
-      userData = docSnap.data();
+  spinBtn.disabled = true;
 
-      // Reset spins if lastSpinDate is not today
-      if (userData.lastSpinDate !== getTodayString()) {
-        userData.spinsLeft = 3;
-        userData.lastSpinDate = getTodayString();
-        await setDoc(userDocRef, userData);
-      }
-    } else {
-      // New user doc
+  async function loadUser(uid) {
+    const userRef = doc(db, "users", uid);
+    const snap = await getDoc(userRef);
+
+    if (!snap.exists()) {
       userData = {
-        spinsLeft: 3,
-        lastSpinDate: getTodayString(),
         credits: 0,
-        days: 0
+        days: 0,
+        spinsLeft: 3,
+        lastSpinDate: today
       };
-      await setDoc(userDocRef, userData);
+    } else {
+      userData = snap.data();
+      if (userData.lastSpinDate !== today) {
+        userData.spinsLeft = 3;
+        userData.lastSpinDate = today;
+      }
     }
 
+    await setDoc(userRef, userData);
     updateUI();
+    spinBtn.disabled = false;
   }
 
-  async function updateUserData() {
-    const userDocRef = doc(db, "users", userId);
-    await setDoc(userDocRef, userData);
-    updateUI();
+  function updateUI() {
+    infoDiv.innerHTML = `
+      <p>🎁 Credits: <b>${userData.credits}</b></p>
+      <p>📅 Days: <b>${userData.days}</b></p>
+      <p>🔄 Spins Left Today: <b>${userData.spinsLeft}</b></p>
+    `;
   }
 
-  spinBtn.addEventListener("click", async () => {
+  async function handleSpin() {
     if (userData.spinsLeft <= 0) {
-      alert("No spins left today, come back tomorrow!");
+      alert("❌ No spins left today. Come back tomorrow!");
       return;
     }
 
-    // Random prize
     const prize = prizes[Math.floor(Math.random() * prizes.length)];
-
-    // Update user credits and days
-    userData.credits = (userData.credits || 0) + prize.credits;
-    userData.days = (userData.days || 0) + prize.days;
+    userData.credits += prize.credits;
+    userData.days += prize.days;
     userData.spinsLeft--;
 
-    await updateUserData();
+    await setDoc(doc(db, "users", userId), userData);
+    updateUI();
+    alert(`🎉 You won: ${prize.credits} credits and ${prize.days} days!`);
+  }
 
-    alert(`You won: ${prize.credits} credits and ${prize.days} days!`);
-  });
+  spinBtn.addEventListener("click", handleSpin);
 
-  // Wait for auth and then load data
+  // ✅ Anonymous Auth
   onAuthStateChanged(auth, async (user) => {
     if (user) {
       userId = user.uid;
-      await loadUserData(userId);
+      await loadUser(userId);
     } else {
-      // For testing, simulate a user ID or prompt login
-      alert("Please log in to spin the wheel!");
-      // Or you can do anonymous auth here or handle guest users
+      await signInAnonymously(auth);
     }
   });
 </script>
