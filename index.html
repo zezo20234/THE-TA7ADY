@@ -605,38 +605,35 @@ document.getElementById("selfEditArea").style.display = "block";
 
 // --- MODIFIED BUY ITEM FUNCTION (CLIENT-SIDE ONLY) ---
 window.buyItem = async function (creditsCost, daysChange) {
-    if (!currentUser) {
-        alert("You must be logged in.");
-        return;
-    }
+    try {
+        if (!currentUser) {
+            alert("You must be logged in.");
+            return false;
+        }
 
-    if (infiniteCreditsActive) {
-        const userRef = ref(database, "users/" + currentUser);
-        const newDays = (currentUserData.days ?? 0) + daysChange;
+        if (infiniteCreditsActive) {
+            const userRef = ref(database, "users/" + currentUser);
+            const newDays = (currentUserData.days ?? 0) + daysChange;
 
-        try {
             await update(userRef, { days: newDays });
+
             currentUserData.days = newDays;
             document.getElementById("infoDays").textContent = newDays;
-            alert("Purchase successful with infinite credits (days updated)! No credits deducted.");
-        } catch (err) {
-            alert("Error updating days with infinite credits: " + err.message);
-            console.error("Error updating days with infinite credits:", err);
+
+            console.log("Infinite credits used. Days updated.");
+            return false;
         }
-        return;
-    }
 
-    const userCreditsRef = ref(database, `users/${currentUser}/credits`);
-    const userDaysRef = ref(database, `users/${currentUser}/days`);
-    const bankCreditsRef = ref(database, 'bank/totalCredits');
+        const userCreditsRef = ref(database, `users/${currentUser}/credits`);
+        const userDaysRef = ref(database, `users/${currentUser}/days`);
+        const bankCreditsRef = ref(database, 'bank/totalCredits');
 
-    try {
         const userSnapshot = await get(userCreditsRef);
         const currentCredits = userSnapshot.exists() ? userSnapshot.val() : 0;
 
         if (currentCredits < creditsCost) {
             alert("Not enough credits.");
-            return;
+            return false;
         }
 
         const bankSnapshot = await get(bankCreditsRef);
@@ -658,7 +655,8 @@ window.buyItem = async function (creditsCost, daysChange) {
         currentUserData.days = newUserDays;
         document.getElementById("infoCredits").textContent = newUserCredits;
         document.getElementById("infoDays").textContent = newUserDays;
-        alert("Purchase successful! Credits transferred to bank.");
+
+        console.log("Purchase successful.");
 
         const transactionRef = push(ref(database, 'transactions'));
         await set(transactionRef, {
@@ -673,9 +671,12 @@ window.buyItem = async function (creditsCost, daysChange) {
 
     } catch (error) {
         console.error("Error during purchase:", error);
-        alert("An error occurred during purchase: " + error.message);
     }
+
+    // Prevent default behavior if button was used inside a <form>
+    return false;
 };
+
 
 // --- MODIFIED BUY INFINITE CREDITS FUNCTION (CLIENT-SIDE ONLY) ---
 window.buyInfiniteCredits = async function() {
