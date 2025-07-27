@@ -720,7 +720,7 @@ window.buyInfiniteCredits = async function() {
         setTimeout(() => {
             infiniteCreditsActive = false;
             alert("Infinite Credits deactivated.");
-        }, 3000);
+        }, 2000);
 
         const transactionRef = push(ref(database, 'transactions'));
         await set(transactionRef, {
