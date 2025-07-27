@@ -404,6 +404,8 @@ get(userRef)
 .then((snapshot) => {
     if (snapshot.exists()) {
         currentUserData = snapshot.val();
+        initRewardButtons(); // ✅ initializes the reward buttons visibility
+
     } else {
         currentUserData = { credits: 0, days: 0 };
         set(userRef, currentUserData);
@@ -977,5 +979,108 @@ window.open('rules.html', '_blank'); // Opens 'rules.html' in a new tab/window
 <button onclick="openMoreOptions()" style="display:none; margin: 10px auto; display: block; max-width: 400px; padding: 12px; border-radius: 30px; background: rgba(255,255,255,0.1); color: blue; border: 1px solid rgba(255,255,255,0.3);" id="openMoreButton">Open More</button>
 
 </script>
+    <!-- 🎁 Special Reward Buttons -->
+<button id="nightRewardButton" onclick="claimNightReward()" style="display:none; margin: 10px auto; padding: 12px; border-radius: 30px; background: rgba(255,255,255,0.2); color: blue; border: 1px solid rgba(255,255,255,0.3); max-width: 400px;">🎁 Claim 700 Credits (10PM Egypt)</button>
+
+<button id="thursdayRewardButton" onclick="claimThursdayReward()" style="display:none; margin: 10px auto; padding: 12px; border-radius: 30px; background: rgba(255,255,255,0.2); color: blue; border: 1px solid rgba(255,255,255,0.3); max-width: 400px;">🎉 Claim 1000 Credits (Thursday)</button>
+
+<script>
+const EGYPT_UTC_OFFSET = 2 * 60; // Egypt is UTC+2
+
+function toEgyptTime(date) {
+  const localOffset = date.getTimezoneOffset(); // in minutes
+  return new Date(date.getTime() + (EGYPT_UTC_OFFSET - localOffset) * 60 * 1000);
+}
+
+let rewardCheckInterval = null;
+
+// Call this after successful login
+function initRewardButtons() {
+  if (rewardCheckInterval) clearInterval(rewardCheckInterval);
+  rewardCheckInterval = setInterval(checkSpecialRewards, 60 * 1000);
+  checkSpecialRewards();
+}
+
+async function checkSpecialRewards() {
+  if (!currentUser) return;
+
+  const nightBtn = document.getElementById("nightRewardButton");
+  const thursdayBtn = document.getElementById("thursdayRewardButton");
+  const nowEgypt = toEgyptTime(new Date());
+
+  const hours = nowEgypt.getHours();
+  const day = nowEgypt.getDay(); // 4 = Thursday
+
+  const userRef = ref(database, "users/" + currentUser);
+  const snap = await get(userRef);
+  if (!snap.exists()) return;
+
+  const data = snap.val();
+  currentUserData = data;
+
+  const lastNight = new Date(data.lastNightRewardClaimed || 0);
+  const lastThursday = new Date(data.lastThursdayRewardClaimed || 0);
+
+  const sameDay = (d1, d2) =>
+    d1.getFullYear() === d2.getFullYear() &&
+    d1.getMonth() === d2.getMonth() &&
+    d1.getDate() === d2.getDate();
+
+  // Night Reward: show only at 10PM Egypt
+  if (hours === 22 && !sameDay(toEgyptTime(lastNight), nowEgypt)) {
+    nightBtn.style.display = "block";
+  } else {
+    nightBtn.style.display = "none";
+  }
+
+  // Thursday Reward: if today is Thursday and not claimed
+  if (day === 4 && !sameDay(toEgyptTime(lastThursday), nowEgypt)) {
+    thursdayBtn.style.display = "block";
+  } else {
+    thursdayBtn.style.display = "none";
+  }
+}
+
+window.claimNightReward = async function () {
+  if (!currentUser) return;
+  const now = new Date();
+  const userRef = ref(database, "users/" + currentUser);
+  const newCredits = (currentUserData.credits ?? 0) + 700;
+
+  try {
+    await update(userRef, {
+      credits: newCredits,
+      lastNightRewardClaimed: now.getTime()
+    });
+    currentUserData.credits = newCredits;
+    document.getElementById("infoCredits").textContent = newCredits;
+    alert("🎁 You received 700 credits!");
+    document.getElementById("nightRewardButton").style.display = "none";
+  } catch (err) {
+    alert("Error claiming night reward: " + err.message);
+  }
+};
+
+window.claimThursdayReward = async function () {
+  if (!currentUser) return;
+  const now = new Date();
+  const userRef = ref(database, "users/" + currentUser);
+  const newCredits = (currentUserData.credits ?? 0) + 1000;
+
+  try {
+    await update(userRef, {
+      credits: newCredits,
+      lastThursdayRewardClaimed: now.getTime()
+    });
+    currentUserData.credits = newCredits;
+    document.getElementById("infoCredits").textContent = newCredits;
+    alert("🎉 You received 1000 credits for Thursday!");
+    document.getElementById("thursdayRewardButton").style.display = "none";
+  } catch (err) {
+    alert("Error claiming Thursday reward: " + err.message);
+  }
+};
+</script>
+
 </body>
 </html>
