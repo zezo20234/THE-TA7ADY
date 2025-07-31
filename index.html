@@ -604,70 +604,58 @@ document.getElementById("selfEditArea").style.display = "block";
 };
 
 // --- MODIFIED BUY ITEM FUNCTION (CLIENT-SIDE ONLY) ---
-window.buyItem = async function (creditsCost, daysChange) {
-    try {
-        if (!currentUser) {
-            alert("You must be logged in.");
-            return false;
-        }
+async function buyItem(itemId) {
+  const userId = localStorage.getItem("userId");
+  if (!userId) return false;
 
-        if (infiniteCreditsActive) {
-            const userRef = ref(database, "users/" + currentUser);
-            const newDays = (currentUserData.days ?? 0) + daysChange;
+  try {
+    const userRef = ref(database, `users/${userId}`);
+    const snapshot = await get(userRef);
+    const userData = snapshot.val();
 
-            await update(userRef, { days: newDays });
+    if (!userData) throw new Error("User not found");
 
-            currentUserData.days = newDays;
-            document.getElementById("infoDays").textContent = newDays;
+    const item = items.find(item => item.id === itemId);
+    if (!item) throw new Error("Item not found");
 
-            console.log("Infinite credits used. Days updated.");
-            return false;
-        }
+    const credits = parseInt(userData.credits) || 0;
+    const days = item.days;
+    const cost = item.price;
 
-        const userCreditsRef = ref(database, `users/${currentUser}/credits`);
-        const userDaysRef = ref(database, `users/${currentUser}/days`);
-        const bankCreditsRef = ref(database, 'bank/totalCredits');
+    if (credits < cost) throw new Error("Not enough credits");
 
-        const userSnapshot = await get(userCreditsRef);
-        const currentCredits = userSnapshot.exists() ? userSnapshot.val() : 0;
+    const previousDays = parseInt(userData.days) || 0;
+    const updatedCredits = credits - cost;
+    const updatedDays = previousDays + days;
 
-        if (currentCredits < creditsCost) {
-            alert("Not enough credits.");
-            return false;
-        }
+    // Update only specific fields
+    await update(userRef, {
+      credits: updatedCredits,
+      days: updatedDays,
+    });
 
-        const bankSnapshot = await get(bankCreditsRef);
-        const currentBankCredits = bankSnapshot.exists() ? bankSnapshot.val() : 0;
+    // Log transaction
+    const timestamp = Date.now();
+    await set(ref(database, `transactions/${timestamp}`), {
+      userId,
+      creditsSpent: cost,
+      daysBefore: previousDays,
+      daysAfter: updatedDays,
+      daysChange: days,
+      timestamp,
+      status: "success",
+    });
 
-        const newUserCredits = currentCredits - creditsCost;
-        const newUserDays = (currentUserData.days ?? 0) + daysChange;
-        const newBankTotalCredits = currentBankCredits + creditsCost;
+    alert("Item purchased successfully!");
+    return true;
 
-        const updates = {};
-        updates[`users/${currentUser}/credits`] = newUserCredits;
-        updates[`users/${currentUser}/days`] = newUserDays;
-        updates['bank/totalCredits'] = newBankTotalCredits;
-        updates['bank/lastUpdated'] = Date.now();
+  } catch (error) {
+    console.error("Purchase failed:", error);
+    alert("Error: " + error.message);
+    return false;
+  }
+}
 
-        await update(ref(database), updates);
-
-        currentUserData.credits = newUserCredits;
-        currentUserData.days = newUserDays;
-        document.getElementById("infoCredits").textContent = newUserCredits;
-        document.getElementById("infoDays").textContent = newUserDays;
-
-        console.log("Purchase successful.");
-
-        const transactionRef = push(ref(database, 'transactions'));
-        await set(transactionRef, {
-            userId: currentUser,
-            creditsSpent: creditsCost,
-            daysChange: daysChange,
-            creditsToBank: creditsCost,
-            timestamp: Date.now(),
-            status: 'completed',
-            itemBought: `Credits: ${creditsCost}, Days: ${daysChange}`
-        });
 
     } catch (error) {
         console.error("Error during purchase:", error);
