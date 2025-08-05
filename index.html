@@ -1083,5 +1083,106 @@ window.claimThursdayReward = async function () {
 };
 </script>
 
+<script type="module">
+  // Firebase SDK
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import {
+    getFirestore,
+    doc,
+    getDoc,
+    updateDoc
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  // ✅ Your Firebase Config (REPLACE THESE)
+  const firebaseConfig = {
+    apiKey: "AIzaSyAdmiUcQ_yZDL4Gg0r93HjqzPYQ6N-gzM8",
+authDomain: "the-challenge-fa9b2.firebaseapp.com",
+databaseURL: "https://the-challenge-fa9b2-default-rtdb.firebaseio.com",
+projectId: "the-challenge-fa9b2",
+storageBucket: "the-challenge-fa9b2.appspot.com",
+messagingSenderId: "4102830619",
+appId: "1:4102830619:web:581e033f36ec02708916be",
+measurementId: "G-7M7JLK1V86"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  // Set your current user UID manually
+  const currentUserUID = "CURRENT_USER_UID"; // <- Replace this with the UID of the logged-in user
+
+  let action = '';
+  let amount = 0;
+
+  async function start(type) {
+    action = type;
+    const input = prompt(`How much to ${type}?`);
+    amount = parseFloat(input);
+
+    if (isNaN(amount) || amount <= 0) {
+      alert("Invalid amount.");
+      return;
+    }
+
+    alert("Now scan the other user's NFC tag...");
+
+    if ("NDEFReader" in window) {
+      try {
+        const ndef = new NDEFReader();
+        await ndef.scan();
+
+        ndef.onreading = async (event) => {
+          const scannedUID = event.serialNumber;
+          if (!scannedUID) {
+            alert("Tag has no UID.");
+            return;
+          }
+
+          const payerRef = doc(db, "users", currentUserUID);
+          const payeeRef = doc(db, "users", scannedUID);
+
+          const payerSnap = await getDoc(payerRef);
+          const payeeSnap = await getDoc(payeeRef);
+
+          if (!payerSnap.exists() || !payeeSnap.exists()) {
+            alert("User not found in database.");
+            return;
+          }
+
+          let payerBal = payerSnap.data().balance || 0;
+          let payeeBal = payeeSnap.data().balance || 0;
+
+          if (action === "pay") {
+            if (payerBal < amount) {
+              alert("Not enough balance to pay.");
+              return;
+            }
+            payerBal -= amount;
+            payeeBal += amount;
+          } else if (action === "give") {
+            if (payeeBal < amount) {
+              alert("Other user has insufficient balance.");
+              return;
+            }
+            payerBal += amount;
+            payeeBal -= amount;
+          }
+
+          await updateDoc(payerRef, { balance: payerBal });
+          await updateDoc(payeeRef, { balance: payeeBal });
+
+          alert(`Done!\nYour Balance: ${payerBal}\nOther User: ${payeeBal}`);
+        };
+
+      } catch (error) {
+        alert("NFC Scan Error: " + error.message);
+      }
+    } else {
+      alert("Web NFC not supported on this device.");
+    }
+  }
+</script>
+
 </body>
 </html>
