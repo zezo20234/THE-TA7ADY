@@ -1082,20 +1082,30 @@ window.claimThursdayReward = async function () {
   }
 };
 </script>
-<!-- 👇 Give Days Button Script (Add before </body>) -->
+
 <div id="give-days-container" style="margin-top: 20px;"></div>
 
 <script>
-  // Make sure Firebase is already initialized earlier in your code
   const auth = firebase.auth();
   const db = firebase.firestore();
 
   auth.onAuthStateChanged((user) => {
     if (user) {
+      console.log("User logged in:", user.uid);
+
       const userRef = db.collection("users").doc(user.uid);
       userRef.get().then((doc) => {
+        if (!doc.exists) {
+          console.log("User doc not found");
+          return;
+        }
+
         const userData = doc.data();
+        console.log("User data:", userData);
+
         if (userData && userData.name === "zezo") {
+          console.log("✅ User is zezo — showing Give Days button");
+
           const giveBtn = document.createElement("button");
           giveBtn.textContent = "🎁 Give Days";
           giveBtn.style.padding = "10px 20px";
@@ -1147,8 +1157,12 @@ window.claimThursdayReward = async function () {
           };
 
           document.getElementById("give-days-container").appendChild(giveBtn);
+        } else {
+          console.log("❌ User is not zezo or missing name field");
         }
       });
+    } else {
+      console.log("No user is logged in");
     }
   });
 </script>
