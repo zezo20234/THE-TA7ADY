@@ -1082,6 +1082,75 @@ window.claimThursdayReward = async function () {
   }
 };
 </script>
+<!-- 👇 Give Days Button Script (Add before </body>) -->
+<div id="give-days-container" style="margin-top: 20px;"></div>
 
+<script>
+  // Make sure Firebase is already initialized earlier in your code
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+
+  auth.onAuthStateChanged((user) => {
+    if (user) {
+      const userRef = db.collection("users").doc(user.uid);
+      userRef.get().then((doc) => {
+        const userData = doc.data();
+        if (userData && userData.name === "zezo") {
+          const giveBtn = document.createElement("button");
+          giveBtn.textContent = "🎁 Give Days";
+          giveBtn.style.padding = "10px 20px";
+          giveBtn.style.fontSize = "16px";
+          giveBtn.style.borderRadius = "6px";
+          giveBtn.style.border = "none";
+          giveBtn.style.backgroundColor = "#007bff";
+          giveBtn.style.color = "white";
+          giveBtn.style.cursor = "pointer";
+
+          giveBtn.onclick = async () => {
+            const toUser = prompt("Who do you want to give days to?");
+            if (!toUser) return;
+
+            const amountStr = prompt("How many days do you want to give?");
+            const amount = parseInt(amountStr);
+            if (isNaN(amount) || amount <= 0) {
+              alert("Invalid number");
+              return;
+            }
+
+            const zezoDays = userData.days || 0;
+            if (amount > zezoDays) {
+              alert("You don’t have enough days.");
+              return;
+            }
+
+            const usersRef = db.collection("users");
+            const querySnapshot = await usersRef.where("name", "==", toUser).get();
+
+            if (querySnapshot.empty) {
+              alert("User not found.");
+              return;
+            }
+
+            const recipientDoc = querySnapshot.docs[0];
+            const recipientRef = recipientDoc.ref;
+
+            await userRef.update({
+              days: firebase.firestore.FieldValue.increment(-amount)
+            });
+
+            await recipientRef.update({
+              days: firebase.firestore.FieldValue.increment(amount)
+            });
+
+            alert(`Gave ${amount} days to ${toUser}`);
+            location.reload();
+          };
+
+          document.getElementById("give-days-container").appendChild(giveBtn);
+        }
+      });
+    }
+  });
+</script>
 </body>
 </html>
