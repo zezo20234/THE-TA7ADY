@@ -604,70 +604,58 @@ document.getElementById("selfEditArea").style.display = "block";
 };
 
 // --- MODIFIED BUY ITEM FUNCTION (CLIENT-SIDE ONLY) ---
-window.buyItem = async function (creditsCost, daysChange) {
-    try {
-        if (!currentUser) {
-            alert("You must be logged in.");
-            return false;
-        }
+async function buyItem(itemId) {
+  const userId = localStorage.getItem("userId");
+  if (!userId) return false;
 
-        if (infiniteCreditsActive) {
-            const userRef = ref(database, "users/" + currentUser);
-            const newDays = (currentUserData.days ?? 0) + daysChange;
+  try {
+    const userRef = ref(database, `users/${userId}`);
+    const snapshot = await get(userRef);
+    const userData = snapshot.val();
 
-            await update(userRef, { days: newDays });
+    if (!userData) throw new Error("User not found");
 
-            currentUserData.days = newDays;
-            document.getElementById("infoDays").textContent = newDays;
+    const item = items.find(item => item.id === itemId);
+    if (!item) throw new Error("Item not found");
 
-            console.log("Infinite credits used. Days updated.");
-            return false;
-        }
+    const credits = parseInt(userData.credits) || 0;
+    const days = item.days;
+    const cost = item.price;
 
-        const userCreditsRef = ref(database, `users/${currentUser}/credits`);
-        const userDaysRef = ref(database, `users/${currentUser}/days`);
-        const bankCreditsRef = ref(database, 'bank/totalCredits');
+    if (credits < cost) throw new Error("Not enough credits");
 
-        const userSnapshot = await get(userCreditsRef);
-        const currentCredits = userSnapshot.exists() ? userSnapshot.val() : 0;
+    const previousDays = parseInt(userData.days) || 0;
+    const updatedCredits = credits - cost;
+    const updatedDays = previousDays + days;
 
-        if (currentCredits < creditsCost) {
-            alert("Not enough credits.");
-            return false;
-        }
+    // Update only specific fields
+    await update(userRef, {
+      credits: updatedCredits,
+      days: updatedDays,
+    });
 
-        const bankSnapshot = await get(bankCreditsRef);
-        const currentBankCredits = bankSnapshot.exists() ? bankSnapshot.val() : 0;
+    // Log transaction
+    const timestamp = Date.now();
+    await set(ref(database, `transactions/${timestamp}`), {
+      userId,
+      creditsSpent: cost,
+      daysBefore: previousDays,
+      daysAfter: updatedDays,
+      daysChange: days,
+      timestamp,
+      status: "success",
+    });
 
-        const newUserCredits = currentCredits - creditsCost;
-        const newUserDays = (currentUserData.days ?? 0) + daysChange;
-        const newBankTotalCredits = currentBankCredits + creditsCost;
+    alert("Item purchased successfully!");
+    return true;
 
-        const updates = {};
-        updates[`users/${currentUser}/credits`] = newUserCredits;
-        updates[`users/${currentUser}/days`] = newUserDays;
-        updates['bank/totalCredits'] = newBankTotalCredits;
-        updates['bank/lastUpdated'] = Date.now();
+  } catch (error) {
+    console.error("Purchase failed:", error);
+    alert("Error: " + error.message);
+    return false;
+  }
+}
 
-        await update(ref(database), updates);
-
-        currentUserData.credits = newUserCredits;
-        currentUserData.days = newUserDays;
-        document.getElementById("infoCredits").textContent = newUserCredits;
-        document.getElementById("infoDays").textContent = newUserDays;
-
-        console.log("Purchase successful.");
-
-        const transactionRef = push(ref(database, 'transactions'));
-        await set(transactionRef, {
-            userId: currentUser,
-            creditsSpent: creditsCost,
-            daysChange: daysChange,
-            creditsToBank: creditsCost,
-            timestamp: Date.now(),
-            status: 'completed',
-            itemBought: `Credits: ${creditsCost}, Days: ${daysChange}`
-        });
 
     } catch (error) {
         console.error("Error during purchase:", error);
@@ -937,6 +925,150 @@ window.stopQrCodeScanner = function () {
 };
 </script>
 
+</script>
+
+<script>
+// Function to decrease days by 1 at midnight if user has days > 0
+function setupDailyDaysDecrement() {
+const now = new Date();
+const millisTillMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0, 0) - now;
+
+setTimeout(function() {
+decrementDays();
+
+// Then set interval to run every 24h afterwards
+setInterval(decrementDays, 24 * 60 * 60 * 1000);
+}, millisTillMidnight);
+}
+
+function decrementDays() {
+if (currentUserData && currentUserData.days > 0) {
+const userRef = ref(database, 'users/' + currentUser);
+const newDays = currentUserData.days - 1;
+
+update(userRef, { days: newDays }).then(() => {
+currentUserData.days = newDays;
+document.getElementById("infoDays").textContent = newDays;
+console.log("Days decremented by 1 at midnight.");
+}).catch(err => {
+console.error("Error decrementing days:", err);
+});
+}
+}
+
+// Call this function after login and data loaded
+setupDailyDaysDecrement();
+</script>
+<script>
+// Function to open the rules page
+function openRules() {
+window.open('rules.html', '_blank'); // Opens 'rules.html' in a new tab/window
+}
+</script>
+<button onclick="openMoreOptions()" style="display:none; margin: 10px auto; display: block; max-width: 400px; padding: 12px; border-radius: 30px; background: rgba(255,255,255,0.1); color: blue; border: 1px solid rgba(255,255,255,0.3);" id="openMoreButton">Open More</button>
+
+</script>
+    <!-- 🎁 Special Reward Buttons -->
+<button id="nightRewardButton" onclick="claimNightReward()" style="display:none; margin: 10px auto; padding: 12px; border-radius: 30px; background: rgba(255,255,255,0.2); color: blue; border: 1px solid rgba(255,255,255,0.3); max-width: 400px;">🎁 Claim 700 Credits (10PM Egypt)</button>
+
+<button id="thursdayRewardButton" onclick="claimThursdayReward()" style="display:none; margin: 10px auto; padding: 12px; border-radius: 30px; background: rgba(255,255,255,0.2); color: blue; border: 1px solid rgba(255,255,255,0.3); max-width: 400px;">🎉 Claim 1000 Credits (Thursday)</button>
+
+<script>
+const EGYPT_UTC_OFFSET = 2 * 60; // Egypt is UTC+2
+
+function toEgyptTime(date) {
+  const localOffset = date.getTimezoneOffset(); // in minutes
+  return new Date(date.getTime() + (EGYPT_UTC_OFFSET - localOffset) * 60 * 1000);
+}
+
+let rewardCheckInterval = null;
+
+// Call this after successful login
+function initRewardButtons() {
+  if (rewardCheckInterval) clearInterval(rewardCheckInterval);
+  rewardCheckInterval = setInterval(checkSpecialRewards, 60 * 1000);
+  checkSpecialRewards();
+}
+
+async function checkSpecialRewards() {
+  if (!currentUser) return;
+
+  const nightBtn = document.getElementById("nightRewardButton");
+  const thursdayBtn = document.getElementById("thursdayRewardButton");
+  const nowEgypt = toEgyptTime(new Date());
+
+  const hours = nowEgypt.getHours();
+  const day = nowEgypt.getDay(); // 4 = Thursday
+
+  const userRef = ref(database, "users/" + currentUser);
+  const snap = await get(userRef);
+  if (!snap.exists()) return;
+
+  const data = snap.val();
+  currentUserData = data;
+
+  const lastNight = new Date(data.lastNightRewardClaimed || 0);
+  const lastThursday = new Date(data.lastThursdayRewardClaimed || 0);
+
+  const sameDay = (d1, d2) =>
+    d1.getFullYear() === d2.getFullYear() &&
+    d1.getMonth() === d2.getMonth() &&
+    d1.getDate() === d2.getDate();
+
+  // Night Reward: show only at 10PM Egypt
+  if (hours === 22 && !sameDay(toEgyptTime(lastNight), nowEgypt)) {
+    nightBtn.style.display = "block";
+  } else {
+    nightBtn.style.display = "none";
+  }
+
+  // Thursday Reward: if today is Thursday and not claimed
+  if (day === 4 && !sameDay(toEgyptTime(lastThursday), nowEgypt)) {
+    thursdayBtn.style.display = "block";
+  } else {
+    thursdayBtn.style.display = "none";
+  }
+}
+
+window.claimNightReward = async function () {
+  if (!currentUser) return;
+  const now = new Date();
+  const userRef = ref(database, "users/" + currentUser);
+  const newCredits = (currentUserData.credits ?? 0) + 700;
+
+  try {
+    await update(userRef, {
+      credits: newCredits,
+      lastNightRewardClaimed: now.getTime()
+    });
+    currentUserData.credits = newCredits;
+    document.getElementById("infoCredits").textContent = newCredits;
+    alert("🎁 You received 700 credits!");
+    document.getElementById("nightRewardButton").style.display = "none";
+  } catch (err) {
+    alert("Error claiming night reward: " + err.message);
+  }
+};
+
+window.claimThursdayReward = async function () {
+  if (!currentUser) return;
+  const now = new Date();
+  const userRef = ref(database, "users/" + currentUser);
+  const newCredits = (currentUserData.credits ?? 0) + 1000;
+
+  try {
+    await update(userRef, {
+      credits: newCredits,
+      lastThursdayRewardClaimed: now.getTime()
+    });
+    currentUserData.credits = newCredits;
+    document.getElementById("infoCredits").textContent = newCredits;
+    alert("🎉 You received 1000 credits for Thursday!");
+    document.getElementById("thursdayRewardButton").style.display = "none";
+  } catch (err) {
+    alert("Error claiming Thursday reward: " + err.message);
+  }
+};
 </script>
 
 </body>
