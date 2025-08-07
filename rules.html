@@ -65,17 +65,11 @@
     .rule-details {
       max-height: 0;
       overflow: hidden;
-      transition: max-height 0.5s ease, opacity 0.5s ease;
       opacity: 0;
-      padding: 0 10px;
+      transition: all 0.5s ease;
       font-size: 0.9em;
       text-align: left;
-    }
-
-    .rule-box.open .rule-details {
-      max-height: 200px;
-      opacity: 1;
-      padding-top: 10px;
+      padding: 0 10px;
     }
 
     .rule-details hr {
@@ -83,12 +77,18 @@
       border-top: 1px solid rgba(0, 0, 255, 0.3);
       margin: 10px 0;
     }
+
+    .rule-box.open .rule-details {
+      opacity: 1;
+      padding-top: 10px;
+    }
   </style>
 </head>
 <body>
 
   <h1>The Rules</h1>
 
+  <!-- Rules (unchanged) -->
   <div class="rule-box">No hit
     <div class="rule-details">
       <hr>Do not physically hurt anyone, as a joke is ok +1 days.
@@ -107,12 +107,11 @@
     </div>
   </div>
 
-<div class="rule-box">Zeyad can no longer make you play with devices when you have days.
-  <div class="rule-details"> 
-    <hr>If Zeyad makes you play with devices when you have days, +20 days to Zeyad!
-  </div> 
-</div>
-
+  <div class="rule-box">Zeyad can no longer make you play with devices when you have days.
+    <div class="rule-details">
+      <hr>If Zeyad makes you play with devices when you have days, +20 days to Zeyad!
+    </div>
+  </div>
 
   <div class="rule-box">No fetn
     <div class="rule-details">
@@ -168,7 +167,7 @@
     </div>
   </div>
 
-   <div class="rule-box">No angry
+  <div class="rule-box">No angry
     <div class="rule-details">
       <hr>Dont be mad +5 days.
     </div>
@@ -176,8 +175,16 @@
 
   <script>
     const ruleBoxes = document.querySelectorAll(".rule-box");
+
     ruleBoxes.forEach(box => {
+      const details = box.querySelector(".rule-details");
       box.addEventListener("click", () => {
+        const isOpen = box.classList.contains("open");
+        if (isOpen) {
+          details.style.maxHeight = null;
+        } else {
+          details.style.maxHeight = details.scrollHeight + "px";
+        }
         box.classList.toggle("open");
       });
     });
