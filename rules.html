@@ -77,90 +77,104 @@
       opacity: 1;
       padding-top: 10px;
     }
+
+    .rule-details hr {
+      border: none;
+      border-top: 1px solid rgba(0, 0, 255, 0.3);
+      margin: 10px 0;
+    }
   </style>
 </head>
 <body>
 
   <h1>The Rules</h1>
 
-  <!-- Example Rule -->
-  <div class="rule-box">
-    No hit
-    <div class="rule-details">Do not physically hurt anyone, as a joke is ok +1 days.</div>
+  <div class="rule-box">No hit
+    <div class="rule-details">
+      <hr>Do not physically hurt anyone, as a joke is ok +1 days.
+    </div>
   </div>
 
-  <div class="rule-box">
-    No scream
-    <div class="rule-details">Speak calmly, only when you are excited or angry +5 days.</div>
+  <div class="rule-box">No scream
+    <div class="rule-details">
+      <hr>Speak calmly, only when you are excited or angry +5 days.
+    </div>
   </div>
 
-  <div class="rule-box">
-    No cry
-    <div class="rule-details">Crying is not allowed +1 days.</div>
+  <div class="rule-box">No cry
+    <div class="rule-details">
+      <hr>Crying is not allowed +1 days.
+    </div>
   </div>
 
-  <div class="rule-box">
-    No angry
-    <div class="rule-details">Dont be mad +5 days.</div>
+  <div class="rule-box">No angry
+    <div class="rule-details">
+      <hr>Dont be mad +5 days.
+    </div>
   </div>
 
-  <div class="rule-box">
-    No copy
-    <div class="rule-details">Be original. Ask permission before copying someone’s idea +100 days.</div>
+
+  <div class="rule-box">No fetn
+    <div class="rule-details">
+      <hr>Don't make FETN. If someone tells you “blip” please don’t tell or repeat it to anyone. +100 days.
+    </div>
   </div>
 
-  <div class="rule-box">
-    No fetn
-    <div class="rule-details">Dont make FETN if someone tells you blip please please dont say or in arabic dont tell anyone whatever the person is talking about +100 days.</div>
+  <div class="rule-box">No bother
+    <div class="rule-details">
+      <hr>Respect others. Don’t annoy them. +5 days.
+    </div>
   </div>
 
-  <div class="rule-box">
-    No bother
-    <div class="rule-details">Respect others Don’t annoy them. +5 days</div>
+  <div class="rule-box">You have to respect
+    <div class="rule-details">
+      <hr>Treat everyone kindly and with respect, always. +10 days.
+    </div>
   </div>
 
-  <div class="rule-box">
-    You have to respect
-    <div class="rule-details">Treat everyone kindly and with respect, always +10 days.</div>
+  <div class="rule-box">CUTE +50 DAYS
+    <div class="rule-details">
+      <hr>Be cute for 5 minutes = +50 days!
+    </div>
   </div>
 
-  <div class="rule-box">
-    CUTE +50 DAYS
-    <div class="rule-details">No cute +50 days for each 5 mins cute!</div>
+  <div class="rule-box">No listen
+    <div class="rule-details">
+      <hr>You have to listen! If not, +50 days.
+    </div>
   </div>
 
-  <div class="rule-box">
-    no listen
-    <div class="rule-details">no listen, you have to listen + 50 days.</div>
+  <div class="rule-box">Play with Zezo
+    <div class="rule-details">
+      <hr>You must play with Zezo. If not, +50 days.
+    </div>
   </div>
 
-  <div class="rule-box">
-    Play with Zezo
-    <div class="rule-details">You must spend time and play fun games with Zezo if not +50 days.</div>
+  <div class="rule-box">No sad
+    <div class="rule-details">
+      <hr>Don’t be sad or +10 days.
+    </div>
   </div>
 
-  <div class="rule-box">
-    No sad
-    <div class="rule-details">Dont be sad or +10 days days.</div>
+  <div class="rule-box">No devices when u have days each minute = 5 days
+    <div class="rule-details">
+      <hr>When you have days, don’t use devices. Each minute = +5 days!
+    </div>
   </div>
 
-  <div class="rule-box">
-    No devices when u have days each minute = 5 days
-    <div class="rule-details">When you have daysdont play with devices or you’ll get 5 days per minute!</div>
+  <div class="rule-box">No copy
+    <div class="rule-details">
+      <hr>You need proof (note, message) that someone gave you permission to copy them.
+    </div>
   </div>
 
-  <div class="rule-box">
-   No copy
-    <div class="rule-details">You need proof (like a note or text) that someone gave you permission to copy someone.</div>
-  </div>
-    
-    <div class="rule-box">
-   Zeyad can no longer make you play with devices when you have days
-    <div class="rule-details">+20 days to zeyad if he makes you play with devices if u have days.</div>
+  <div class="rule-box">Zeyad can no longer make you play with devices when you have days
+    <div class="rule-details">
+      <hr>If Zeyad makes you play with devices when you have days, +20 days to Zeyad!
+    </div>
   </div>
 
   <script>
-    // Toggle animation on click
     const ruleBoxes = document.querySelectorAll(".rule-box");
     ruleBoxes.forEach(box => {
       box.addEventListener("click", () => {
