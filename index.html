@@ -898,7 +898,7 @@ window.startQrCodeScanner = function () {
 
     html5QrCode.start(
         { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 250, height: 250 } },
+        { fps: 60, qrbox: { width: 300, height: 300 } },
         (decodedText) => {
             if (decodedText) {
                 html5QrCode.stop().then(() => {
@@ -1166,5 +1166,88 @@ window.claimThursdayReward = async function () {
     }
   });
 </script>
+<!-- Hidden button initially -->
+<button id="egyptButton" style="display: none; padding: 10px 20px; background-color: green; color: white; border: none; border-radius: 5px;">
+  Claim 5000 Credits (6:10–6:12 PM)
+</button>
+
+
+<!-- If not, uncomment and fill with your own config -->
+<!-- 
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT.firebaseapp.com",
+    databaseURL: "https://YOUR_PROJECT.firebaseio.com",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_PROJECT.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId: "YOUR_APP_ID"
+  };
+  firebase.initializeApp(firebaseConfig);
+</script>
+-->
+
+<script>
+  // ✅ Manually set the current user here if you're not using Firebase Auth
+  // Replace "zezo" with your actual logged-in username
+  window.currentUser = "zezo";
+
+  function checkEgyptTime() {
+    const now = new Date();
+
+    // Convert local time to Egypt time (UTC+3)
+    const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+    const egyptOffset = 3;
+    const egyptTime = new Date(utc + (3600000 * egyptOffset));
+
+    const hours = egyptTime.getHours();
+    const minutes = egyptTime.getMinutes();
+
+    const button = document.getElementById("egyptButton");
+
+    // Show only from 6:10 PM to 6:12 PM Egypt time
+    if (hours === 18 && minutes >= 10 && minutes < 12) {
+      button.style.display = "inline-block";
+    } else {
+      button.style.display = "none";
+    }
+  }
+
+  // Initial check and keep checking every 30 seconds
+  checkEgyptTime();
+  setInterval(checkEgyptTime, 30000);
+
+  // Handle button click to give 5000 credits
+  document.getElementById("egyptButton").addEventListener("click", async () => {
+    try {
+      if (!window.currentUser) {
+        alert("You're not logged in!");
+        return;
+      }
+
+      const userRef = firebase.database().ref("users/" + currentUser);
+      const snapshot = await userRef.once("value");
+
+      if (!snapshot.exists()) {
+        alert("User not found in database.");
+        return;
+      }
+
+      const currentCredits = snapshot.val().credits || 0;
+      const newCredits = currentCredits + 5000;
+
+      await userRef.update({ credits: newCredits });
+
+      alert("✅ You claimed 5000 credits!");
+    } catch (error) {
+      console.error(error);
+      alert("❌ Error claiming credits.");
+    }
+  });
+</script>
+
 </body>
 </html>
